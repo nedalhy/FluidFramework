@@ -14,7 +14,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const merge = require('webpack-merge');
 const _ = require('underscore');
 
-const baseConfig = require('./webpack.appfw.base.js');
+const baseConfig = require('./webpack.base.js');
 
 
 const getCommandLineArgs = function () {
