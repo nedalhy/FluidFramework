@@ -19,7 +19,7 @@ const TemplateValidator = require('./template_validator');
 const PROPERTY_PATH_DELIMITER = require('@fluid-experimental/property-common').constants.PROPERTY_PATH_DELIMITER;
 const MSG = require('@fluid-experimental/property-common').constants.MSG;
 
-const Utils = require('./utils');
+const Utils = require('./utils').default.default;
 const ArrayChangeSetIterator = require('./changeset_operations/array_changeset_iterator');
 const ConflictType = require('./changeset_operations/changeset_conflict_types');
 const isEmptyChangeSet = require('./changeset_operations/is_empty_changeset');
