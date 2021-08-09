@@ -7,7 +7,7 @@
  */
 
 //@ts-ignore
-import { constants, Strings } from "@fluid-experimental/property-common";
+import { constants, joinPaths } from "@fluid-experimental/property-common";
 import _ from "lodash";
 import { ApplyChangeSetOptions, ConflictInfo, SerializedChangeSet } from "../changeset";
 import { TypeIdHelper } from "../helpers/typeidHelper";
@@ -16,7 +16,6 @@ import { ConflictType } from "./changesetConflictTypes";
 import { isEmptyChangeSet } from "./isEmptyChangeset";
 
 const { PROPERTY_PATH_DELIMITER, MSG } = constants;
-const { joinPaths } = Strings;
 
 /**
  * @namespace property-changeset.ChangeSetOperations.IndexedCollectionOperations
