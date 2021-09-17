@@ -12,7 +12,7 @@ export class ConsoleUtils { // eslint-disable-line @typescript-eslint/no-extrane
      * @param  in_condition - the condition we are testing: a boolean expression.
      * @param  in_message - the error message that will be thrown if the condition is false.
      */
-    static assert(in_condition: boolean, in_message: string) {
+    static assert(in_condition: boolean, in_message?: string) {
         if (!in_condition) {
             throw new Error(in_message);
         }

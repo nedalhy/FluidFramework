@@ -608,7 +608,7 @@ const _validateSkipSemver = function(in_template, in_templatePrevious) {
  */
 const getInvalidContextError = function(in_context) {
     if (in_context && !_.includes(VALID_CONTEXTS, in_context)) {
-        return new Error(`${MSG.NOT_A_VALID_CONTEXT} ${in_context}`);
+        return new Error(`${MSG.UNKNOWN_CONTEXT} ${in_context}`);
     }
 
     return undefined;

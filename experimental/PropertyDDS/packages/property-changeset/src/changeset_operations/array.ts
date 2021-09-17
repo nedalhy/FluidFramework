@@ -912,7 +912,7 @@ const handleCombinations = function(in_segment: SegmentType, in_isPrimitiveType:
                         // we have to recursively call the modify
                         for (let i = 0; i < opB.operation[1].length; ++i) {
                             // TypeIds MUST be stored in the entries
-                            ConsoleUtils.assert(opA.operation[1][i].typeid);
+                            ConsoleUtils.assert(opA.operation[1][i].typeid === undefined);
 
                             this.performApplyAfterOnPropertyWithTypeid(i,
                                 opA.operation[1],
@@ -1325,7 +1325,7 @@ export namespace ChangeSetArrayFunctions {
         in_appliedPropertyChanges: SerializedChangeSet,
         in_typeid: string,
         in_options?: ApplyChangeSetOptions) {
-        ConsoleUtils.assert(in_typeid, "_performApplyAfterOnPropertyArray: typeid missing");
+        ConsoleUtils.assert(in_typeid === undefined, "_performApplyAfterOnPropertyArray: typeid missing");
         ConsoleUtils.assert(!_.isString(io_basePropertyChanges), io_basePropertyChanges);
         ConsoleUtils.assert(!_.isString(in_appliedPropertyChanges), in_appliedPropertyChanges);
 

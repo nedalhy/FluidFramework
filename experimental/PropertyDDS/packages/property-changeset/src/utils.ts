@@ -700,7 +700,7 @@ export namespace Utils {
                         for (i = 0; i < arrayIterator.opDescription.operation[1].length; ++i) {
                             // The typeid is stored inline for arrays
                             typeid = (arrayIterator.opDescription.operation[1][i] as any).typeid;
-                            ConsoleUtils.assert(typeid, MSG.NON_PRIMITIVE_ARRAY_NO_TYPEID);
+                            ConsoleUtils.assert(typeid === undefined, MSG.NON_PRIMITIVE_ARRAY_NO_TYPEID);
                             processChange(arrayIterator.opDescription.operation[0] + i, arrayIterator.opDescription.operation[1][i], typeid, false,
                                 propertyContainerType, insertCounter, i, arrayIterator.opDescription.operation[0], arrayIterator.opDescription.offset);
                         }
@@ -721,7 +721,7 @@ export namespace Utils {
                         for (i = 0; i < arrayIterator.opDescription.operation[1].length; ++i) {
                             // The typeid is stored inline for arrays
                             typeid = (arrayIterator.opDescription.operation[1][i] as any).typeid;
-                            ConsoleUtils.assert(typeid, MSG.NON_PRIMITIVE_ARRAY_NO_TYPEID);
+                            ConsoleUtils.assert(typeid === undefined, MSG.NON_PRIMITIVE_ARRAY_NO_TYPEID);
                             processChange(arrayIterator.opDescription.operation[0] + i, arrayIterator.opDescription.operation[1][i], typeid, false,
                                 propertyContainerType, modifyCounter, i, arrayIterator.opDescription.operation[0], arrayIterator.opDescription.offset);
                         }
@@ -1198,7 +1198,7 @@ export namespace Utils {
      * @alias property-changeset.Utils.traverseChangeSetRecursively
      */
     export function traverseChangeSetRecursively(in_changeSet: SerializedChangeSet, in_params?: TraversalOptions) {
-        ConsoleUtils.assert(in_params.preCallback || in_params.postCallback);
+        ConsoleUtils.assert(!!in_params.preCallback || !!in_params.postCallback);
         // Initialize the traversal context
         const context = new Utils.TraversalContext();
         if (in_changeSet.typeid) {
@@ -1236,7 +1236,7 @@ export namespace Utils {
      *
      */
     export function traverseChangeSetRecursivelyAsync(in_changeSet: SerializedChangeSet, in_params?: TraversalOptions, in_finalizer?: (any) => any) {
-        ConsoleUtils.assert(in_params.preCallback || in_params.postCallback);
+        ConsoleUtils.assert(!!in_params.preCallback || !!in_params.postCallback);
         // Initialize the traversal context
         const context = new Utils.TraversalContext();
         if (in_changeSet.typeid) {

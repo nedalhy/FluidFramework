@@ -1269,6 +1269,16 @@ const PropertyFactoryError = {
      * methods: PropertyFactory.inheritsFrom
      */
     TYPEID_IS_NOT_ENUM: "PF-069: The provided type does not inherit from Enum: ",
+
+    /**
+     * When the typeid provided is not property set native typeid.
+     */
+    TYPEID_NOT_NATIVE: "PF-070: The provided typeid is not native typeid:",
+
+    /**
+     * When validating a schema while it's still in validation process.
+     */
+    CONTEXT_VALIDATION_IN_PROGRESS: "PF-071: Schema validation is still in progress.",
 };
 
 const RepositoryError = {
