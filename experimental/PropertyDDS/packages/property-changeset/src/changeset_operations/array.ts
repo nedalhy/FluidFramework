@@ -5,7 +5,6 @@
 /**
  * @fileoverview Helper functions and classes to work with array ChangeSets
  */
-// @ts-ignore
 import { ConsoleUtils, constants } from "@fluid-experimental/property-common";
 import _ from "lodash";
 import { ApplyChangeSetOptions, ConflictInfo, SerializedChangeSet } from "../changeset";

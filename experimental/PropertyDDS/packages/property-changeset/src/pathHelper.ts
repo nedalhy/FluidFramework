@@ -6,7 +6,6 @@
  * @fileoverview Helper functions to work with path strings
  */
 
-// @ts-ignore
 import { constants } from '@fluid-experimental/property-common';
 
 const { PROPERTY_PATH_DELIMITER, MSG } = constants;

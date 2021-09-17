@@ -2,7 +2,6 @@
  * Copyright (c) Microsoft Corporation and contributors. All rights reserved.
  * Licensed under the MIT License.
  */
-//@ts-ignore
 import { ConsoleUtils, constants } from "@fluid-experimental/property-common";
 import { eachOfSeries, eachSeries, ErrorCallback, series, timesSeries, whilst } from "async";
 import _, { cloneDeep } from "lodash";

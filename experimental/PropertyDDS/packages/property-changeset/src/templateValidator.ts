@@ -18,7 +18,6 @@ import { gt, diff, major, valid, compare } from "semver";
 import traverse from "traverse";
 import { queue } from "async";
 
-//@ts-ignore
 import { constants, ConsoleUtils } from "@fluid-experimental/property-common";
 import { TemplateSchema } from "./templateSchema";
 import { TypeIdHelper } from "./helpers/typeidHelper";

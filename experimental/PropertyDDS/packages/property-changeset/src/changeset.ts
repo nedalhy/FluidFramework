@@ -8,7 +8,6 @@
 
 import _ from "lodash"
 
-//@ts-ignore
 import { ConsoleUtils, joinPaths, constants } from "@fluid-experimental/property-common";
 
 import { TypeIdHelper } from "./helpers/typeidHelper";

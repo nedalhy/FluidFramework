@@ -6,7 +6,6 @@
  * @fileoverview Iterator to iterate over array ChangeSets
  */
 
-// @ts-ignore
 import { constants } from "@fluid-experimental/property-common";
 import _ from "lodash";
 import { SerializedChangeSet } from "../changeset";

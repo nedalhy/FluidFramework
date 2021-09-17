@@ -6,7 +6,6 @@
  * @fileoverview Helper functions and classes to work with ChangeSets with indexed collections (sets and maps)
  */
 
-//@ts-ignore
 import { constants, joinPaths } from "@fluid-experimental/property-common";
 import _ from "lodash";
 import { ApplyChangeSetOptions, ConflictInfo, SerializedChangeSet } from "../changeset";
