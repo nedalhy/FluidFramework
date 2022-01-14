@@ -5,7 +5,7 @@
 
 import { ScribeLambdaFactory } from "@fluidframework/server-lambdas";
 import { createDocumentRouter } from "@fluidframework/server-routerlicious-base";
-import { createProducer, MongoDbFactory, TenantManager } from "@fluidframework/server-services";
+import { createProducer, RouterlicousDbFactoryFactory, TenantManager } from "@fluidframework/server-services";
 import {
     DefaultServiceConfiguration,
     IDb,
@@ -18,12 +18,11 @@ import { Provider } from "nconf";
 
 export async function scribeCreate(config: Provider): Promise<IPartitionLambdaFactory> {
     // Access config values
-    const operationsDbMongoUrl = config.get("mongo:operationsDbEndpoint") as string;
     const globalDbEnabled = config.get("mongo:globalDbEnabled") as boolean;
     const documentsCollectionName = config.get("mongo:collectionNames:documents");
     const messagesCollectionName = config.get("mongo:collectionNames:scribeDeltas");
     const createCosmosDBIndexes = config.get("mongo:createCosmosDBIndexes");
-    const bufferMaxEntries = config.get("mongo:bufferMaxEntries") as number | undefined;
+
     const kafkaEndpoint = config.get("kafka:lib:endpoint");
     const kafkaLibrary = config.get("kafka:lib:name");
     const kafkaProducerPollIntervalMs = config.get("kafka:lib:producerPollIntervalMs");
@@ -39,10 +38,10 @@ export async function scribeCreate(config: Provider): Promise<IPartitionLambdaFa
     const authEndpoint = config.get("auth:endpoint");
     const tenantManager = new TenantManager(authEndpoint);
 
-    // Access Mongo storage for pending summaries
-    const operationsDbMongoFactory = new MongoDbFactory(operationsDbMongoUrl, bufferMaxEntries);
-    const operationsDbMongoManager = new MongoManager(operationsDbMongoFactory, false);
-    const operationsDb = await operationsDbMongoManager.getDatabase();
+    const serviceFactory = new RouterlicousDbFactoryFactory(config);
+    const factory = await serviceFactory.create();
+    const mongoManager = new MongoManager(factory, false);
+    const operationsDb = await mongoManager.getDatabase();
 
     let globalDb;
     if (globalDbEnabled) {

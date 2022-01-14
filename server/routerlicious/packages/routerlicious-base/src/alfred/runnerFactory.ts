@@ -173,9 +173,9 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
         }
 
         // Database connection for operations db
-        const operationsDbMongoUrl = config.get("mongo:operationsDbEndpoint") as string;
-        const operationsDbMongoFactory = new services.MongoDbFactory(operationsDbMongoUrl, bufferMaxEntries);
-        const operationsDbMongoManager = new core.MongoManager(operationsDbMongoFactory, false);
+        const serviceFactory = new services.RouterlicousDbFactoryFactory(config);
+        const factory = await serviceFactory.create();
+        const operationsDbMongoManager = new core.MongoManager(factory);
         const documentsCollectionName = config.get("mongo:collectionNames:documents");
 
         // Create the index on the documents collection

@@ -14,8 +14,8 @@ import { RedisOptions } from "ioredis";
 import * as winston from "winston";
 
 export async function deliCreate(config: Provider): Promise<core.IPartitionLambdaFactory> {
-    const mongoUrl = config.get("mongo:operationsDbEndpoint") as string;
     const bufferMaxEntries = config.get("mongo:bufferMaxEntries") as number | undefined;
+
     const kafkaEndpoint = config.get("kafka:lib:endpoint");
     const kafkaLibrary = config.get("kafka:lib:name");
     const kafkaProducerPollIntervalMs = config.get("kafka:lib:producerPollIntervalMs");
@@ -46,10 +46,12 @@ export async function deliCreate(config: Provider): Promise<core.IPartitionLambd
         globalDb = await globalDbMongoManager.getDatabase();
     }
     // Connection to stored document details
-    const operationsDbMongoFactory = new services.MongoDbFactory(mongoUrl, bufferMaxEntries);
-    const operationsDbMongoManager = new core.MongoManager(operationsDbMongoFactory, false);
-    const operationsDb = await operationsDbMongoManager.getDatabase();
-    const db: core.IDb = globalDbEnabled ? globalDb : operationsDb;
+    const serviceFactory = new services.RouterlicousDbFactoryFactory(config);
+    const factory = await serviceFactory.create();
+
+    const mongoManager = new core.MongoManager(factory, false);
+    const db = globalDbEnabled ? globalDb : await mongoManager.getDatabase();
+
     // eslint-disable-next-line @typescript-eslint/await-thenable
     const collection = await db.collection<core.IDocument>(documentsCollectionName);
 
