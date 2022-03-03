@@ -44,4 +44,6 @@ export interface ITokenProvider {
      * whether token came from cache.
      */
     fetchStorageToken(tenantId: string, documentId: string, refresh?: boolean): Promise<ITokenResponse>;
+
+    documentPostCreateCallback(documentId: string, creationToken: string);
 }
