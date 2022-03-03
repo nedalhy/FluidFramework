@@ -67,7 +67,7 @@ export class ThrottlingWarning extends LoggingError implements IThrottlingWarnin
     ): IThrottlingWarning {
         const newErrorFn =
             (errMsg: string) => new ThrottlingWarning(errMsg, retryAfterSeconds);
-        return wrapErrorAndLog(error, newErrorFn, logger);
+            return wrapErrorAndLog(error, newErrorFn, logger);
     }
 }
 
