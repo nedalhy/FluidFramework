@@ -45,5 +45,5 @@ export interface ITokenProvider {
      */
     fetchStorageToken(tenantId: string, documentId: string, refresh?: boolean): Promise<ITokenResponse>;
 
-    documentPostCreateCallback(documentId: string, creationToken: string);
+    documentPostCreateCallback?(documentId: string, creationToken: string);
 }
