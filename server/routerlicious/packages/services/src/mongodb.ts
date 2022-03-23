@@ -157,7 +157,7 @@ export class MongoDb implements core.IDb {
 }
 
 interface IMongoDBConfig {
-    endpoint: string;
+    operationsDbEndpoint: string;
     bufferMaxEntries: number | undefined;
 }
 
@@ -166,7 +166,7 @@ export class MongoDbFactory implements core.IDbFactory {
     private readonly bufferMaxEntries?: number;
     constructor(config: IMongoDBConfig,
     ) {
-        const mongoUrl = config.endpoint;
+        const mongoUrl = config.operationsDbEndpoint;
         const bufferMaxEntries = config.bufferMaxEntries;
         assert(!!mongoUrl, `No endpoint provided`);
         this.endpoint = mongoUrl;

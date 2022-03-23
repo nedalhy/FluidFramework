@@ -1,53 +1,58 @@
+/*!
+ * Copyright (c) Microsoft Corporation and contributors. All rights reserved.
+ * Licensed under the MIT License.
+ */
+
 import { Provider } from "nconf";
 import registerDebug from "debug";
 import { IDbFactory } from "./database";
 
-export interface IBackendDescriptor {
-    name: string // name of the backend
+export interface IDatabaseDescriptor {
+    name: string // name of the database
     factory: () => Promise<IDbFactory> // name of the constructor
 }
 
-export interface IBackendConfig {
+export interface IDatabaseConfig {
     path: string, // Path of the module to load
     config: any, // configuration that will be passed into the constructor
-    name: string // name of the backend
+    name: string // name of the database
     factory: string // name of the constructor
 }
-const creator = (descriptor: IBackendConfig) => async () => {
-    debug(`Using ${descriptor.name} Backend`);
+const creator = (descriptor: IDatabaseConfig) => async () => {
+    debug(`Using ${descriptor.name} Database`);
     const extension = await import(`${descriptor.path}`);
     const thingyFactory = extension[descriptor.factory];
     return new thingyFactory(descriptor) as IDbFactory;
 };
 
-const debug = registerDebug("fluid:backend");
+const debug = registerDebug("fluid:database");
 
 export class DbFactoryFactory {
-    private readonly backends: Map<string, () => Promise<IDbFactory>>;
+    private readonly databases: Map<string, () => Promise<IDbFactory>>;
 
-    constructor(config: Provider, dbServices: IBackendDescriptor[], private readonly defaultBackend: string) {
-        const available_backends: Map<string, () => Promise<IDbFactory>> = new Map(
+    constructor(config: Provider, dbServices: IDatabaseDescriptor[], private readonly defaultDatabase: string) {
+        const availableDbs: Map<string, () => Promise<IDbFactory>> = new Map(
             dbServices.map((desc) => [desc.name, desc.factory]),
         );
 
         if (process.env.LOADEXTENSIONS) {
-            const EXTENSIONS = config.get("extensions:db") as IBackendConfig[] || [];
+            const EXTENSIONS = config.get("extensions:db") as IDatabaseConfig[] || [];
             EXTENSIONS.forEach((ext) => {
-                available_backends.set(ext.name, creator(ext));
+                availableDbs.set(ext.name, creator(ext));
             });
         }
 
-        debug("Available Backends:", available_backends.keys());
+        debug("Available DBs:", availableDbs.keys());
 
-        this.backends = available_backends;
+        this.databases = availableDbs;
     }
-    async create(backendOverride?: string): Promise<IDbFactory> {
-        const backend = backendOverride || this.defaultBackend;
+    async create(databaseOverride?: string): Promise<IDbFactory> {
+        const db = databaseOverride || this.defaultDatabase;
 
-        if (this.backends.has(backend)) {
-            return this.backends.get(backend)();
+        if (this.databases.has(db)) {
+            return this.databases.get(db)();
         } else {
-            throw new Error(`Unknown backend specified: ${backend}`);
+            throw new Error(`Unknown database specified: ${db}`);
         }
     }
 }

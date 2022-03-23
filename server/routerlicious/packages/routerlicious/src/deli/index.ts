@@ -12,10 +12,9 @@ import { Lumberjack } from "@fluidframework/server-services-telemetry";
 import { Provider } from "nconf";
 import { RedisOptions } from "ioredis";
 import * as winston from "winston";
+import { IDb, MongoManager } from "@fluidframework/server-services-core";
 
 export async function deliCreate(config: Provider): Promise<core.IPartitionLambdaFactory> {
-    const bufferMaxEntries = config.get("mongo:bufferMaxEntries") as number | undefined;
-
     const kafkaEndpoint = config.get("kafka:lib:endpoint");
     const kafkaLibrary = config.get("kafka:lib:name");
     const kafkaProducerPollIntervalMs = config.get("kafka:lib:producerPollIntervalMs");
@@ -34,23 +33,22 @@ export async function deliCreate(config: Provider): Promise<core.IPartitionLambd
     // Generate tenant manager which abstracts access to the underlying storage provider
     const authEndpoint = config.get("auth:endpoint");
     const tenantManager = new services.TenantManager(authEndpoint);
+    const globalDbEnabled = config.get("mongo:globalDbEnabled") as boolean;
 
     // Database connection for global db if enabled
-    let globalDbMongoManager;
-    let globalDb;
-    const globalDbEnabled = config.get("mongo:globalDbEnabled") as boolean;
-    if (globalDbEnabled) {
-        const globalDbMongoUrl = config.get("mongo:globalDbEndpoint") as string;
-        const globalDbMongoFactory = new services.MongoDbFactory(globalDbMongoUrl, bufferMaxEntries);
-        globalDbMongoManager = new core.MongoManager(globalDbMongoFactory, false);
-        globalDb = await globalDbMongoManager.getDatabase();
-    }
-    // Connection to stored document details
-    const serviceFactory = new services.RouterlicousDbFactoryFactory(config);
-    const factory = await serviceFactory.create();
+    const factory = await services.getDbFactory(config);
 
-    const mongoManager = new core.MongoManager(factory, false);
-    const db = globalDbEnabled ? globalDb : await mongoManager.getDatabase();
+    let globalDb;
+    let globalDbManager;
+    if (globalDbEnabled) {
+        globalDbManager = new MongoManager(factory, false, null, true);
+        globalDb = await globalDbManager.getDatabase();
+    }
+
+    const operationsDbManager = new MongoManager(factory, false);
+    const operationsDb = await operationsDbManager.getDatabase();
+
+    const db: IDb = globalDbEnabled ? globalDb : operationsDb;
 
     // eslint-disable-next-line @typescript-eslint/await-thenable
     const collection = await db.collection<core.IDocument>(documentsCollectionName);
@@ -107,13 +105,13 @@ export async function deliCreate(config: Provider): Promise<core.IPartitionLambd
     await broadcasterLambda.start();
 
     return new DeliLambdaFactory(
-        operationsDbMongoManager,
+        operationsDbManager,
         collection,
         tenantManager,
         combinedProducer,
         reverseProducer,
         core.DefaultServiceConfiguration,
-        globalDbMongoManager);
+        globalDbManager);
 }
 
 export async function create(config: Provider): Promise<core.IPartitionLambdaFactory> {

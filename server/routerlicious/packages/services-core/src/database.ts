@@ -148,5 +148,5 @@ export interface IDb {
 }
 
 export interface IDbFactory {
-    connect(): Promise<IDb>;
+    connect(global: boolean): Promise<IDb>;
 }

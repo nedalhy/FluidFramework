@@ -48,9 +48,7 @@ export class RiddlerResources implements IResources {
 export class RiddlerResourcesFactory implements IResourcesFactory<RiddlerResources> {
     public async create(config: Provider): Promise<RiddlerResources> {
         // Database connection
-        const bufferMaxEntries = config.get("mongo:bufferMaxEntries") as number | undefined;
-        const serviceFactory = new services.RouterlicousDbFactoryFactory(config);
-        const factory = await serviceFactory.create();
+        const factory = await services.getDbFactory(config);
 
         const operationsDbMongoManager = new MongoManager(factory);
         const tenantsCollectionName = config.get("mongo:collectionNames:tenants");
@@ -60,9 +58,7 @@ export class RiddlerResourcesFactory implements IResourcesFactory<RiddlerResourc
         let globalDbMongoManager;
         const globalDbEnabled = config.get("mongo:globalDbEnabled") as boolean;
         if (globalDbEnabled) {
-            const globalDbMongoUrl = config.get("mongo:globalDbEndpoint") as string;
-            const globalDbMongoFactory = new services.MongoDbFactory(globalDbMongoUrl, bufferMaxEntries);
-            globalDbMongoManager = new MongoManager(globalDbMongoFactory);
+            globalDbMongoManager = new MongoManager(factory, false, null, true);
         }
 
         const mongoManager = globalDbEnabled ? globalDbMongoManager : operationsDbMongoManager;

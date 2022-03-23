@@ -15,27 +15,27 @@ export async function create(config: Provider): Promise<IPartitionLambdaFactory>
     const deltasCollectionName = config.get("mongo:collectionNames:deltas");
     const documentsCollectionName = config.get("mongo:collectionNames:documents");
     const createCosmosDBIndexes = config.get("mongo:createCosmosDBIndexes") as boolean;
-    const bufferMaxEntries = config.get("mongo:bufferMaxEntries") as number | undefined;
-    const serviceFactory = new services.RouterlicousDbFactoryFactory(config);
-    const factory = await serviceFactory.create();
 
     const softDeletionRetentionPeriodMs = config.get("mongo:softDeletionRetentionPeriodMs") as number;
     const offlineWindowMs = config.get("mongo:offlineWindowMs") as number;
     const softDeletionEnabled = config.get("mongo:softDeletionEnabled") as boolean;
     const permanentDeletionEnabled = config.get("mongo:permanentDeletionEnabled") as boolean;
     const deletionIntervalMs = config.get("mongo:deletionIntervalMs") as number;
-    const operationsDbMongoManager = new MongoManager(factory, false);
+
+    // Database connection for global db if enabled
+    const factory = await services.getDbFactory(config);
 
     let globalDb;
     if (globalDbEnabled) {
-        const globalDbMongoUrl = config.get("mongo:globalDbEndpoint") as string;
-        const globalDbMongoFactory = new services.MongoDbFactory(globalDbMongoUrl, bufferMaxEntries);
-        const globalDbMongoManager = new MongoManager(globalDbMongoFactory, false);
+        const globalDbMongoManager = new MongoManager(factory, false, null, true);
         globalDb = await globalDbMongoManager.getDatabase();
     }
 
-    const operationsDb = await operationsDbMongoManager.getDatabase();
+    const operationsDbManager = new MongoManager(factory, false);
+    const operationsDb = await operationsDbManager.getDatabase();
+
     const documentsCollectionDb = globalDbEnabled ? globalDb : operationsDb;
+
     const documentsCollection: ICollection<IDocument> = documentsCollectionDb.collection(documentsCollectionName);
     const opCollection = operationsDb.collection(deltasCollectionName);
 
@@ -84,5 +84,5 @@ export async function create(config: Provider): Promise<IPartitionLambdaFactory>
         (error) => { return error.code === FluidServiceErrorCode.FeatureDisabled; },
     );
 
-    return new ScriptoriumLambdaFactory(operationsDbMongoManager, opCollection);
+    return new ScriptoriumLambdaFactory(operationsDbManager, opCollection);
 }

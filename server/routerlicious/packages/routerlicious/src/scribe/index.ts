@@ -5,7 +5,7 @@
 
 import { ScribeLambdaFactory } from "@fluidframework/server-lambdas";
 import { createDocumentRouter } from "@fluidframework/server-routerlicious-base";
-import { createProducer, RouterlicousDbFactoryFactory, TenantManager } from "@fluidframework/server-services";
+import { createProducer, getDbFactory, TenantManager } from "@fluidframework/server-services";
 import {
     DefaultServiceConfiguration,
     IDb,
@@ -38,18 +38,16 @@ export async function scribeCreate(config: Provider): Promise<IPartitionLambdaFa
     const authEndpoint = config.get("auth:endpoint");
     const tenantManager = new TenantManager(authEndpoint);
 
-    const serviceFactory = new RouterlicousDbFactoryFactory(config);
-    const factory = await serviceFactory.create();
-    const mongoManager = new MongoManager(factory, false);
-    const operationsDb = await mongoManager.getDatabase();
+    const factory = await getDbFactory(config);
 
     let globalDb;
     if (globalDbEnabled) {
-        const globalDbMongoUrl = config.get("mongo:globalDbEndpoint") as string;
-        const globalDbMongoFactory = new MongoDbFactory(globalDbMongoUrl, bufferMaxEntries);
-        const globalDbMongoManager = new MongoManager(globalDbMongoFactory, false);
+        const globalDbMongoManager = new MongoManager(factory, false, null, true);
         globalDb = await globalDbMongoManager.getDatabase();
     }
+
+    const operationsDbManager = new MongoManager(factory, false);
+    const operationsDb = await operationsDbManager.getDatabase();
 
     const documentsCollectionDb: IDb = globalDbEnabled ? globalDb : operationsDb;
 
@@ -96,7 +94,7 @@ export async function scribeCreate(config: Provider): Promise<IPartitionLambdaFa
         kafkaSslCACertFilePath);
 
     return new ScribeLambdaFactory(
-        operationsDbMongoManager,
+        operationsDbManager,
         collection,
         scribeDeltas,
         producer,

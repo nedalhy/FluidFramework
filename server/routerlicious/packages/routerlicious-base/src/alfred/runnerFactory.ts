@@ -160,21 +160,16 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
         const redisClientForJwtCache = new Redis(redisOptions2);
         const redisJwtCache = new services.RedisCache(redisClientForJwtCache);
 
-        const bufferMaxEntries = config.get("mongo:bufferMaxEntries") as number | undefined;
         // Database connection for global db if enabled
         let globalDbMongoManager;
         let globalDb;
         const globalDbEnabled = config.get("mongo:globalDbEnabled") as boolean;
+        const factory = await services.getDbFactory(config);
         if (globalDbEnabled) {
-            const globalDbMongoUrl = config.get("mongo:globalDbEndpoint") as string;
-            const globalDbMongoFactory = new services.MongoDbFactory(globalDbMongoUrl, bufferMaxEntries);
-            globalDbMongoManager = new core.MongoManager(globalDbMongoFactory, false);
-            globalDb = await globalDbMongoManager.getDatabase();
+            globalDbMongoManager = new core.MongoManager(factory, false, null, true);
         }
 
         // Database connection for operations db
-        const serviceFactory = new services.RouterlicousDbFactoryFactory(config);
-        const factory = await serviceFactory.create();
         const operationsDbMongoManager = new core.MongoManager(factory);
         const documentsCollectionName = config.get("mongo:collectionNames:documents");
 
