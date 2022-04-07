@@ -63,6 +63,26 @@ export enum Multiplicity {
     Sequence,
     /**
      * Exactly 0 items.
+     *
+     * Using Forbidden makes what types are listed for allowed in a field irrelevant since the field will never have values in it.
+     *
+     * Using Forbidden is equivalent to picking a multiplicity that permits empty (like sequence or optional) and having no allowed types (or only never types).
+     * Because of this, its possible to express everything constraint wise without Forbidden,
+     * but using Forbidden can be more semantically clear than optional with no allowed types.
+     *
+     * For view schema, this can be useful if you need to:
+     * - run a specific out of schema handler when a field is present,
+     * but otherwise are ignoring or tolerating (ex: via extra fields) unmentioned fields.
+     * - prevent a specific field from being used as an extra field (perhaps for some past of future compatibility reason)
+     * - keep a field in a schema for metadata purposes
+     * (ex: for improved error messaging, error handling or documentation) that is not used in this specific version of the schema (ex: to document what it was or will be used for).
+     *
+     * For stored schema, this can be useful if you need to:
+     * - have a field which can have its schema updated to Optional or Sequence of any type.
+     * - to exclude a field from extra fields
+     * - for the schema system to use as a default for fields which aren't declared (ex: when updating a field that did not exist into one that does)
+     *
+     * See {@link emptyField} for a constant, reusable field using Forbidden.
      */
     Forbidden,
 }
@@ -136,21 +156,31 @@ export interface TreeSchema {
     /**
      * Constraint for local fields not mentioned in `localFields`.
      *
-     * Allowing extraFields enables using trees like a map without having to insert localFields for all the keys.
+     * Allows using using the local fields as a map, with the keys being LocalFieldKeys and the values being constrained by this FieldSchema.
      *
-     * This implementation currently does not allow extra fields that are globalFields:
-     * nothing prevents adding support for this,
-     * either as part of these extra fields (and requiring them to meet this FieldSchema as well as their own),
-     * or as a separate construct.
-     * Support for them is simply omitted as it is not required by the use-cases in of this example implementation.
+     * To forbid this map like usage, use {@link emptyField} here.
      *
-     * Usually `Multiplicity.Value` should NOT be used here since no nodes can ever be in schema are in schema if you use `Multiplicity.Value` here (that would require infinite children).
+     * Usually `Multiplicity.Value` should NOT be used here since no nodes can ever be in schema are in schema if you use `Multiplicity.Value` here
+     * (that would require infinite children).
+     * This pattern, which produces a schema which can never be met, is used by @link neverTree},
+     * and can be useful in special cases (like a default stored schema when none is specified).
      */
     readonly extraLocalFields: FieldSchema;
 
     /**
      * If true, GlobalFieldKeys other than the ones listed above in globalFields may be used to store data on this tree node.
      * Such fields must still be in schema with their global FieldSchema.
+     *
+     * This allows for the "augmentations" pattern where users can attach information they understand to any tree without risk of name collisions.
+     * This is not the only way to do "augmentations":
+     * another approach is for the applications that wish to add them to include the augmentation in their view schema on the nodes they with to augment,
+     * and update the stored schema to permit them as needed.
+     *
+     * This schema system could work with extraGlobalFields unconditionally on
+     * (justified as allowing augmentations everywhere though requiring stored schema changes),
+     * or unconditionally off (requiring augmentations to sometimes update stored schema).
+     * Simplifying this system to not have extraGlobalFields and default it to on or off is a design decision with doesn't impact the rest of this system,
+     * and thus is being put off for now.
      */
     readonly extraGlobalFields: boolean;
 
