@@ -143,10 +143,6 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
                         }
                     }
 
-                    if (PropertyFactory.inheritsFrom(splitTypeId.typeid, "NodeProperty")) {
-
-                    }
-
                     typeSchema = {
                         localFields: localFields,
                         globalFields: emptySet,
