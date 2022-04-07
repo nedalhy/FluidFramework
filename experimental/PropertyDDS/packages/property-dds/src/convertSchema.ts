@@ -27,7 +27,7 @@ const numberTypes = new Set([
     'Float32',
     'Float64']);
 
-function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
+export function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
     // Extract all referenced typeids for the schema
     const unprocessedTypeIds = [typeid];
     const referencedTypeIDs = new Set<TreeSchemaIdentifier>();
@@ -49,7 +49,7 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
 
         // Extract context information (i.e. array, map and set types)
         const extractContexts = (properties : Array<any>) => {
-            for (const property of properties) {
+            for (const property of (properties || [])) {
                 if (property.properties) {
                     // We have a nested set of properties
                     // TODO: We have to create a corresponding nested type
@@ -58,8 +58,12 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
                 if (property.context && property.context !== "single") {
                     referencedTypeIDs.add( (property.context + "<" + property.typeid + ">") as TreeSchemaIdentifier );
                 }
+                if (TypeIdHelper.isPrimitiveType(property.typeid)) {
+                    referencedTypeIDs.add(property.typeid);
+                }
             }
         };
+        extractContexts(schemaTemplate.properties);
     }
 
     // Now we create the actual schemas, since we are now able to reference the dependent types
@@ -129,6 +133,8 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
                     inheritanceChain.push(splitTypeId.typeid);
 
                     for (const typeIdInInheritanceChain of inheritanceChain) {
+                        if (typeIdInInheritanceChain === "NodeProperty") continue;
+
                         const schema = PropertyFactory.getTemplate(typeIdInInheritanceChain);
                         if (schema === undefined) {
                             throw new Error('Unknown typeid referenced: ' + typeIdInInheritanceChain);
@@ -137,11 +143,16 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
                             if (property.properties) {
                                 // TODO: Handle nested properties
                             } else {
+                                let typeid = property.typeid;
+                                if (property.context && property.context !== "single") {
+                                    typeid = (property.context + "<" + (property.typeid || "") + ">");
+                                }
+
                                 localFields.set(
-                                    property.typeid as LocalFieldKey, {
+                                    property.id as LocalFieldKey, {
                                         multiplicity: (property.optional ? Multiplicity.Optional : Multiplicity.Value),
                                         types: new Set([
-                                            property.typeId
+                                            typeid
                                         ])
                                     }
                                 )

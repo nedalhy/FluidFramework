@@ -419,18 +419,26 @@ export function allowsTreeSuperset(
         !compareSets(
             original.localFields,
             superset.localFields,
-            (originalField) =>
-                allowsFieldSuperset(
+            (originalField) => {
+                const originalFieldEntry = original.localFields.get(originalField);
+                if (originalFieldEntry === undefined) throw new Error("Unknown field: " + originalField)
+
+                return allowsFieldSuperset(
                     repo,
-                    original.localFields.get(originalField),
+                    originalFieldEntry,
                     superset.extraLocalFields
-                ),
-            (supersetField) =>
-                allowsFieldSuperset(
+                );
+            },
+            (supersetField) => {
+                const supersetFieldEntry = original.localFields.get(supersetField);
+                if (supersetFieldEntry === undefined) throw new Error("Unknwnw field: " + supersetFieldEntry)
+
+                return allowsFieldSuperset(
                     repo,
                     original.extraLocalFields,
-                    superset.localFields.get(supersetField)
-                )
+                    supersetFieldEntry
+                );
+            }
         )
     ) {
         return false;
