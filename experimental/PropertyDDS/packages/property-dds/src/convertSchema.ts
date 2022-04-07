@@ -59,24 +59,12 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
         };
     }
 
-    // Register all extracted typeIDs with the store (initially using an empty schema)
+    // Now we create the actual schemas, since we are now able to reference the dependent types
     for (const referencedTypeId of referencedTypeIDs.values()) {
-        if (repository.lookupTreeSchema(referencedTypeId) === neverTree) {
+        if (repository.lookupTreeSchema(referencedTypeId) !== neverTree) {
             continue;
         }
 
-        // Register the schema (initially without any fields and values, just to be able to reference it later)
-        repository.tryUpdateTreeSchema(referencedTypeId, {
-            localFields: new Map(),
-            globalFields: new Set(),
-            extraLocalFields: neverField,
-            extraGlobalFields: false,
-            value: ValueSchema.Nothing,
-        })
-    }
-
-    // Now we create the actual schemas, since we are now able to reference the dependent types
-    for (const referencedTypeId of referencedTypeIDs.values()) {
         const splitTypeId = TypeIdHelper.extractContext(referencedTypeId);
         let typeSchema : TreeSchema = undefined;
 
@@ -133,7 +121,7 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
                             value: ValueSchema.Nothing,
                         };
                 } else {
-                    const extraLocalFields = new Map<LocalFieldKey, FieldSchema>();
+                    const localFields = new Map<LocalFieldKey, FieldSchema>();
                     const inheritanceChain = PropertyFactory.getAllParentsForTemplate(splitTypeId.typeid);
                     inheritanceChain.push(splitTypeId.typeid);
 
@@ -143,7 +131,7 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
                             if (property.properties) {
                                 // TODO: Handle nested properties
                             } else {
-                                extraLocalFields.set(
+                                localFields.set(
                                     property.typeid as LocalFieldKey, {
                                         multiplicity: (property.optional ? Multiplicity.Optional : Multiplicity.Value),
                                         types: new Set([
@@ -154,6 +142,22 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
                             }
                         }
                     }
+
+                    if (PropertyFactory.inheritsFrom(splitTypeId.typeid, "NodeProperty")) {
+
+                    }
+
+                    typeSchema = {
+                        localFields: localFields,
+                        globalFields: emptySet,
+                        extraLocalFields: PropertyFactory.inheritsFrom(splitTypeId.typeid, "NodeProperty") ?
+                            emptyField :
+                            {
+                                multiplicity: Multiplicity.Optional
+                            },
+                        extraGlobalFields: false,
+                        value: ValueSchema.Nothing,
+                    };
                 }
             }
         } else {
@@ -197,6 +201,8 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
                     throw new Error("Unknown context in typeid: " + splitTypeId.context);
             }
         }
+
+        repository.tryUpdateTreeSchema(referencedTypeId, typeSchema);
     }
 }
 
