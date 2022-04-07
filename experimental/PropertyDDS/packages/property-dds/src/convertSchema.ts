@@ -37,6 +37,9 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
         referencedTypeIDs.add(unprocessedTypeID as TreeSchemaIdentifier);
 
         const schemaTemplate = PropertyFactory.getTemplate(unprocessedTypeID);
+        if (schemaTemplate === undefined) {
+            throw new Error('Unknown typeid: ' + typeid);
+        }
         const dependencies = PropertyTemplate.extractDependencies(schemaTemplate) as TreeSchemaIdentifier[];
         for (const dependencyTypeId of dependencies) {
             if (!referencedTypeIDs.has(dependencyTypeId)) {
@@ -66,7 +69,7 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
         }
 
         const splitTypeId = TypeIdHelper.extractContext(referencedTypeId);
-        let typeSchema : TreeSchema = undefined;
+        let typeSchema : (TreeSchema | undefined) = undefined;
 
         if (splitTypeId.context === "single") {
             if (TypeIdHelper.isPrimitiveType(splitTypeId.typeid)) {
@@ -127,6 +130,9 @@ function convertPSetSchema(typeid, repository : StoredSchemaRepository) {
 
                     for (const typeIdInInheritanceChain of inheritanceChain) {
                         const schema = PropertyFactory.getTemplate(typeIdInInheritanceChain);
+                        if (schema === undefined) {
+                            throw new Error('Unknown typeid referenced: ' + typeIdInInheritanceChain);
+                        }
                         for (const property of schema.properties) {
                             if (property.properties) {
                                 // TODO: Handle nested properties
