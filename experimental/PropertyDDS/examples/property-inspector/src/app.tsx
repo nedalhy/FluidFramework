@@ -6,7 +6,6 @@ import _ from "lodash";
 
 import { getDefaultObjectFromContainer } from "@fluidframework/aqueduct";
 import {
-    getFluidRelayContainer,
     getTinyliciousContainer,
     hasFluidRelayEndpoints,
 } from "@fluid-experimental/get-container";
@@ -16,6 +15,7 @@ import { registerSchemas } from "@fluid-experimental/schemas";
 import { IPropertyTree } from "./dataObject";
 import { PropertyTreeContainerRuntimeFactory as ContainerFactory } from "./containerCode";
 import { renderApp } from "./inspector";
+import { getFluidRelayContainer } from "./utils/getFluidRelayContainer";
 
 // In interacting with the service, we need to be explicit about whether we're creating a new document vs. loading
 // an existing one.  We also need to provide the unique ID for the document we are loading from.

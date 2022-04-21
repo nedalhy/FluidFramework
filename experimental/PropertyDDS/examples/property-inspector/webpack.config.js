@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const path = require('path');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = env => {
     const htmlTemplate = "./src/index.html";
@@ -30,9 +30,10 @@ module.exports = env => {
             ]
         },
         output: {
-            filename: "[name].[contenthash].js",
+            filename: "[name].[hash].js",
         },
         plugins: [
+            new Dotenv(),
             new HtmlWebpackPlugin({
                 template: htmlTemplate
             })
