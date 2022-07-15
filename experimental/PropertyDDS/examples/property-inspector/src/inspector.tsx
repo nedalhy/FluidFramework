@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import ReactDOM from "react-dom";
 
 import _ from "lodash";
@@ -22,9 +22,10 @@ import { SharedPropertyTree } from "@fluid-experimental/property-dds";
 import AutoSizer from "react-virtualized-auto-sizer";
 
 import { Box } from "@material-ui/core";
+import ReactJson from "react-json-view";
 import { theme } from "./theme";
-import { JsonTable } from "./jsonInspector/jsonTable";
-import { PropertyTable } from "./propertyInspector/propertyTable";
+import { JsonTable } from "./jsonInspector/JsonTable";
+import { PropertyTable } from "./PropertyInspector/PropertyTable";
 
 const useStyles = makeStyles({
     activeGraph: {
@@ -116,6 +117,7 @@ const customData = {
 
 export const InspectorApp = (props: any) => {
     const classes = useStyles();
+    const [data, setData] = useState(customData);
     // const chipClasses = useChipStyles();
 
     return (
@@ -129,15 +131,16 @@ export const InspectorApp = (props: any) => {
                                 {
                                     ({ width, height }) =>
                                     <Box sx={{ display: "flex" }}>
+                                        <ReactJson src={data} onEdit={(edit) => setData(edit.updated_src as any)}/>
                                         <JsonTable
                                             readOnly={true}
                                             width={width / 2}
                                             height={height}
                                             {...props}
-                                            data={customData}
+                                            data={data}
                                         />
                                         <PropertyTable
-                                            readOnly={true}
+                                            // readOnly={true}
                                             width={width / 2}
                                             height={height}
                                             {...props}
