@@ -10,7 +10,7 @@ import Skeleton from "react-loading-skeleton";
 
 import classNames from "classnames";
 import debounce from "lodash.debounce";
-import * as React from "react";
+import React, { createRef } from "react";
 import BaseTable, { SortOrder } from "react-base-table";
 import { ModalConsumer } from "./ModalManager";
 // eslint-disable-next-line import/no-unassigned-import
@@ -19,7 +19,6 @@ import { InspectorMessages, minRows } from "./constants";
 import { EditReferencePath } from "./EditReferencePath";
 import { computeIconSize, Empty } from "./Empty";
 import { ExpiryModal } from "./ExpiryModal";
-import { getDefaultInspectorTableIcons } from "./icons";
 import { InspectorTableFooter } from "./InspectorTableFooter";
 import { InspectorTableHeader } from "./InspectorTableHeader";
 import {
@@ -211,7 +210,6 @@ class InspectorTable<
     followReferences: true,
     nameGetter: defaultInspectorTableNameGetter,
     rowHeight: 32,
-    rowIconRenderer: getDefaultInspectorTableIcons,
     editReferenceHandler: handleReferencePropertyEdit,
     fillExpanded: () => {},
   };
@@ -240,11 +238,12 @@ class InspectorTable<
   private readonly dataCreation: boolean;
   private columns: any;
   private readonly debouncedSearchChange: (searchExpression: string) => void;
-  private readonly table = React.createRef();
+  private readonly table;
   private toTableRowOptions: IToTableRowsOptions;
 
   public constructor(props: Readonly<IInspectorTableProps<T>>) {
     super(props as any);
+    this.table = createRef<BaseTable>();
 
     this.state = {
       childToParentMap: {},
@@ -443,14 +442,8 @@ class InspectorTable<
     let expandedKeys: string[] = [];
     let emptyDescription: string;
     if (data !== undefined) {
-      // const property = data.getProperty();
-      // const workspace = property.getRoot().getWorkspace();
-      // if (workspace) {
       expandedKeys = Object.keys(expanded);
       emptyDescription = InspectorMessages.EMPTY_WORKSPACE;
-      // } else {
-      //   emptyDescription = InspectorMessages.NO_WORKSPACE;
-      // }
     } else {
       rows = [];
       emptyDescription = InspectorMessages.NO_DATA;
@@ -552,7 +545,7 @@ class InspectorTable<
     return (
       <div className={classes.root}>
         <BaseTable<T>
-          // ref={this.table}
+          ref={this.table}
           data={rowsData}
           width={width}
           className={classes.table}
@@ -639,7 +632,7 @@ class InspectorTable<
 
   private readonly handleCancelCreate = () => {
     this.setState({ showFormRowID: "0" });
-    this.forceUpdateBaseTable();
+    // this.forceUpdateBaseTable();
   };
 
   private readonly renderCreationRow = (rowData: T) => {
@@ -860,8 +853,10 @@ class InspectorTable<
   };
 
   private readonly forceUpdateBaseTable = () => {
-    // (this.table.current as any).table.bodyRef.recomputeGridSize();
-  };
+    this.table.current.forceUpdateTable();
+    // @TODO find a cleaner way to trigger re-render when columns should rerendered
+    this.table.current.columnManager.resetCache();
+   };
 }
 
 const StyledInspectorTable = withStyles(styles, { name: "InspectorTable" })(InspectorTable as any);
