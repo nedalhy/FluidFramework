@@ -26,6 +26,7 @@ import ReactJson from "react-json-view";
 import { theme } from "./theme";
 import { JsonTable } from "./jsonInspector/jsonTable";
 import { PropertyTable } from "./propertyInspector/propertyTable";
+import { ForestTable, getForest } from "./forestInspector/forestTable";
 
 const useStyles = makeStyles({
     activeGraph: {
@@ -160,9 +161,13 @@ export const InspectorApp = (props: any) => {
     const classes = useStyles();
     const [data, setData] = useState(customData);
     const [value, setValue] = useState(0);
+    const [forest, setForest] = useState(getForest(customData));
     // const chipClasses = useChipStyles();
 
-    const onJsonEdit = ({ updated_src }) => setData(updated_src);
+    const onJsonEdit = ({ updated_src }) => {
+        setData(updated_src);
+        setForest(getForest(updated_src));
+    };
 
     return (
         <MuiThemeProvider theme={theme}>
@@ -173,15 +178,15 @@ export const InspectorApp = (props: any) => {
                         <div className={classes.tableContainer}>
                         <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
                             <Tabs value={value} onChange={(event, newValue) => setValue(newValue)}>
-                                <Tab label="PropertyDDS" id="tab-propertyDDS"/>
-                                <Tab label="JSON Cursor" id="tab-jsonCursor"/>
                                 <Tab label="Forest Cursor" id="tab-forestCursor"/>
+                                <Tab label="JSON Cursor" id="tab-jsonCursor"/>
+                                <Tab label="PropertyDDS" id="tab-propertyDDS"/>
                             </Tabs>
                             <AutoSizer>
                             {
                                 ({ width, height }) =>
                                     <Box sx={{ display: "flex" }}>
-                                        <TabPanel value={value} index={0}>
+                                        <TabPanel value={value} index={2}>
                                             <PropertyTable
                                                 // readOnly={true}
                                                 width={width}
@@ -202,6 +207,15 @@ export const InspectorApp = (props: any) => {
                                                     data={data}
                                                 />
                                             </Box>
+                                        </TabPanel>
+                                        <TabPanel value={value} index={0}>
+                                            <ForestTable
+                                                readOnly={false}
+                                                width={width}
+                                                height={height}
+                                                {...props}
+                                                data={forest}
+                                            />
                                         </TabPanel>
                                     </Box>
                             }

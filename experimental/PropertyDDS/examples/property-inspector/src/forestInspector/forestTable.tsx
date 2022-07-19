@@ -12,7 +12,8 @@ import { Box, Chip, Switch, TextField, FormLabel, Button } from "@material-ui/co
 import { makeStyles } from "@material-ui/core/styles";
 
 import { TreeNavigationResult, JsonCursor, TreeType, EmptyKey, ITreeCursor, FieldKey,
-    jsonArray, jsonString, jsonBoolean, jsonNumber, jsonObject } from "@fluid-internal/tree";
+    jsonArray, jsonString, jsonBoolean, jsonNumber, jsonObject,
+    ObjectForest } from "@fluid-internal/tree";
 
 const useStyles = makeStyles({
     boolColor: {
@@ -103,16 +104,20 @@ const getDataFromCursor = (
     return rows;
 };
 
-const toTableRows = ({ data }: Partial<IJsonRowData>, props: IToTableRowsProps,
+const toTableRows = ({ data: forest }: Partial<IJsonRowData>, props: IToTableRowsProps,
     _options?: Partial<IToTableRowsOptions>, _pathPrefix?: string,
 ): IJsonRowData[] => {
-    const jsonCursor = new JsonCursor(data);
-    return getDataFromCursor(jsonCursor, [], props.readOnly);
+    const reader = forest.allocateCursor();
+    const result = forest.tryGet(forest.root, reader);
+    if (result === TreeNavigationResult.Ok) {
+        return getDataFromCursor(reader, [], props.readOnly);
+    }
+    return [];
 };
 
-export type IJsonTableProps = IInspectorTableProps;
+export type IForestTableProps = IInspectorTableProps;
 
-const jsonTableProps: Partial<IJsonTableProps> = {
+const forestTableProps: Partial<IForestTableProps> = {
     columns: ["name", "value", "type"],
     expandColumnKey: "name",
     toTableRows,
@@ -135,7 +140,7 @@ const jsonTableProps: Partial<IJsonTableProps> = {
             </Box>
         </Box>);
     },
-    generateForm: (rowData, handleCreateData) => {
+    generateForm: () => {
         return true;
     },
     // TODO: // Fix types
@@ -153,11 +158,23 @@ const jsonTableProps: Partial<IJsonTableProps> = {
     height: 600,
 };
 
-export const JsonTable = (props: IJsonTableProps) => {
+export const getForest = (data: any = undefined) => {
+    const forest = new ObjectForest();
+    if (data) {
+        const cursor = new JsonCursor(data);
+        const newRange = forest.add([cursor]);
+        const dst = { index: 0, range: forest.rootField };
+        forest.attachRangeOfChildren(dst, newRange);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return forest;
+};
+
+export const ForestTable = (props: IForestTableProps) => {
     const classes = useStyles();
 
     return <InspectorTable
-        {...jsonTableProps}
+        {...forestTableProps}
         columnsRenderers={
             {
                 name: ({ rowData, cellData, renderCreationRow, tableProps: { readOnly } }) => {

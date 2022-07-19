@@ -5,7 +5,7 @@
 
 export { EmptyKey, FieldKey, TreeType, Value, TreeValue } from "./tree";
 
-export { ITreeCursor, TreeNavigationResult } from "./forest";
+export { ITreeCursor, TreeNavigationResult, IEditableForest } from "./forest";
 export { LocalFieldKey, GlobalFieldKey, TreeSchemaIdentifier } from "./schema";
 
 export {
@@ -27,3 +27,5 @@ export {
     jsonTypeSchema,
     jsonArray, jsonBoolean, jsonNull, jsonNumber, jsonObject, jsonString,
 } from "./domains";
+
+export { ObjectForest } from "./feature-libraries";
