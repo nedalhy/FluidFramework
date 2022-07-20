@@ -191,7 +191,7 @@ export const InspectorApp = (props: any) => {
                                         </TabPanel>
                                         <TabPanel value={value} index={1}>
                                             <Box sx={{ display: "flex", flexDirection: "row" }}>
-                                                <Box width={width / 3} className={classes.editor}>
+                                                <Box width={width / 2} className={classes.editor}>
                                                     <ReactJson
                                                         src={data}
                                                         onEdit={onJsonEdit}
