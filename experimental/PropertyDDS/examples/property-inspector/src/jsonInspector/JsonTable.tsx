@@ -8,11 +8,14 @@ import {
     typeidToIconMap,
     IRowData,
 } from "@fluid-experimental/property-inspector-table";
+import AutoSizer from "react-virtualized-auto-sizer";
 import { Box, Chip, Switch, TextField, FormLabel, Button } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
-import { TreeNavigationResult, JsonCursor, TreeType, EmptyKey, ITreeCursor, FieldKey,
-    jsonArray, jsonString, jsonBoolean, jsonNumber, jsonObject } from "@fluid-internal/tree";
+import {
+    TreeNavigationResult, JsonCursor, TreeType, EmptyKey, ITreeCursor, FieldKey,
+    jsonArray, jsonString, jsonBoolean, jsonNumber, jsonObject
+} from "@fluid-internal/tree";
 
 const useStyles = makeStyles({
     boolColor: {
@@ -122,17 +125,32 @@ const jsonTableProps: Partial<IJsonTableProps> = {
         },
     }),
     dataCreationHandler: async () => { },
-    addDataForm: () => {
-        return (<Box sx={{ display: "flex", flexDirection: "column", height: "160px" }}>
-            <Box sx={{ display: "flex", height: "75px" }}>
-                <TextField label="name"></TextField>
-                <TextField label="value"></TextField>
-            </Box>
-            <Box sx={{ display: "flex", height: "75px" }}>
-                <Button>Cancel</Button>
-                <Button>Create</Button>
-            </Box>
-        </Box>);
+    addDataForm: ({ styleClass }) => {
+        return (
+            <AutoSizer defaultHeight={200} defaultWidth={200}>
+                {({ width, height }) => (
+                    <div style={{
+                        height: `${height - 20}px`,
+                        width: `${width - 20}px`,
+                    }}>
+                        <Box
+                            className={styleClass}
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                            }}>
+                            <Box sx={{ display: "flex", height: "75px" }}>
+                                <TextField label="name"></TextField>
+                                <TextField label="value"></TextField>
+                            </Box>
+                            <Box sx={{ display: "flex", height: "75px" }}>
+                                <Button>Cancel</Button>
+                                <Button>Create</Button>
+                            </Box>
+                        </Box>
+                    </div>)
+                }
+            </AutoSizer >);
     },
     generateForm: () => {
         return true;

@@ -24,8 +24,8 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { Box, Tabs, Tab } from "@material-ui/core";
 import ReactJson from "react-json-view";
 import { theme } from "./theme";
-import { JsonTable } from "./jsonInspector/jsonTable";
-import { PropertyTable } from "./propertyInspector/propertyTable";
+import { JsonTable } from "./jsonInspector/JsonTable";
+import { PropertyTable } from "./propertyInspector/PropertyTable";
 
 const useStyles = makeStyles({
     activeGraph: {
@@ -192,7 +192,12 @@ export const InspectorApp = (props: any) => {
                                         <TabPanel value={value} index={1}>
                                             <Box sx={{ display: "flex", flexDirection: "row" }}>
                                                 <Box width={width / 2} className={classes.editor}>
-                                                    <ReactJson src={data} onEdit={onJsonEdit}/>
+                                                    <ReactJson
+                                                        src={data}
+                                                        onEdit={onJsonEdit}
+                                                        onAdd={onJsonEdit}
+                                                        onDelete={onJsonEdit}
+                                                        />
                                                 </Box>
                                                 <JsonTable
                                                     readOnly={false}
