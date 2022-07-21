@@ -114,12 +114,12 @@ const useStyles = makeStyles({
 }, { name: "InspectorApp" });
 
 const customData: any = {
-    test1: "dodo",
+    test1: "John Doe",
     test2: 12,
     test3: true,
-    ttt: false,
+    test4: false,
     newProp: 100,
-    test4: {
+    test5: {
         test5: "hello booboo",
     },
     test6: [1, 2, "daba dee", ["a", "b", 3, 4, { foo: { bar: "buz" } }]],
@@ -171,11 +171,11 @@ export const InspectorApp = (props: any) => {
                 <div className={classes.root}>
                     <div className={classes.horizontalContainer}>
                         <div className={classes.tableContainer}>
-                        <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
+                        <Box sx={{ display: "flex", flexDirection: "column", width: "100%", height: "100%" }}>
                             <Tabs value={value} onChange={(event, newValue) => setValue(newValue)}>
                                 <Tab label="PropertyDDS" id="tab-propertyDDS"/>
-                                <Tab label="JSON Cursor" id="tab-jsonCursor"/>
-                                <Tab label="Forest Cursor" id="tab-forestCursor"/>
+                                <Tab label="JSON" id="tab-jsonCursor"/>
+                                <Tab label="Forest" id="tab-forestCursor"/>
                             </Tabs>
                             <AutoSizer>
                             {
@@ -191,7 +191,7 @@ export const InspectorApp = (props: any) => {
                                         </TabPanel>
                                         <TabPanel value={value} index={1}>
                                             <Box sx={{ display: "flex", flexDirection: "row" }}>
-                                                <Box width={width / 2} className={classes.editor}>
+                                                <Box width={width / 3} className={classes.editor}>
                                                     <ReactJson
                                                         src={data}
                                                         onEdit={onJsonEdit}
@@ -201,7 +201,7 @@ export const InspectorApp = (props: any) => {
                                                 </Box>
                                                 <JsonTable
                                                     readOnly={false}
-                                                    width={width / 2}
+                                                    width={2 * width / 3}
                                                     height={height}
                                                     {...props}
                                                     data={data}
