@@ -159,13 +159,13 @@ function TabPanel(props: TabPanelProps) {
 
 export const InspectorApp = (props: any) => {
     const classes = useStyles();
-    const [data, setData] = useState(customData);
-    const [value, setValue] = useState(0);
+    const [json, setJson] = useState(customData);
+    const [tabIndex, setTabIndex] = useState(0);
     const [forest, setForest] = useState(getForest(customData));
     // const chipClasses = useChipStyles();
 
     const onJsonEdit = ({ updated_src }) => {
-        setData(updated_src);
+        setJson(updated_src);
         setForest(getForest(updated_src));
     };
 
@@ -176,55 +176,55 @@ export const InspectorApp = (props: any) => {
                 <div className={classes.root}>
                     <div className={classes.horizontalContainer}>
                         <div className={classes.tableContainer}>
-                        <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
-                            <Tabs value={value} onChange={(event, newValue) => setValue(newValue)}>
-                                <Tab label="Forest Cursor" id="tab-forestCursor"/>
-                                <Tab label="JSON Cursor" id="tab-jsonCursor"/>
-                                <Tab label="PropertyDDS" id="tab-propertyDDS"/>
-                            </Tabs>
-                            <AutoSizer>
-                            {
-                                ({ width, height }) =>
-                                    <Box sx={{ display: "flex" }}>
-                                        <TabPanel value={value} index={2}>
-                                            <PropertyTable
-                                                // readOnly={true}
-                                                width={width}
-                                                height={height}
-                                                {...props}
-                                            />
-                                        </TabPanel>
-                                        <TabPanel value={value} index={1}>
-                                            <Box sx={{ display: "flex", flexDirection: "row" }}>
-                                                <Box width={width / 2} className={classes.editor}>
-                                                    <ReactJson src={data} onEdit={onJsonEdit}/>
-                                                </Box>
-                                                <JsonTable
-                                                    readOnly={false}
-                                                    width={width / 2}
-                                                    height={height}
-                                                    {...props}
-                                                    data={data}
-                                                />
+                            <Box sx={{ display: "flex", flexDirection: "row", width: "100%" }}>
+                                <Box sx={{ display: "flex", flexDirection: "column", width: "75%" }}>
+                                    <Tabs value={tabIndex} onChange={(event, newTabIndex) => setTabIndex(newTabIndex)}>
+                                        <Tab label="Forest Cursor" id="tab-forestCursor"/>
+                                        <Tab label="JSON Cursor" id="tab-jsonCursor"/>
+                                        <Tab label="PropertyDDS" id="tab-propertyDDS"/>
+                                    </Tabs>
+                                    <AutoSizer>
+                                    {
+                                        ({ width, height }) =>
+                                            <Box sx={{ display: "flex" }}>
+                                                <TabPanel value={tabIndex} index={2}>
+                                                    <PropertyTable
+                                                        // readOnly={true}
+                                                        width={width}
+                                                        height={height}
+                                                        {...props}
+                                                    />
+                                                </TabPanel>
+                                                <TabPanel value={tabIndex} index={1}>
+                                                    <JsonTable
+                                                        readOnly={false}
+                                                        width={width}
+                                                        height={height}
+                                                        {...props}
+                                                        data={json}
+                                                    />
+                                                </TabPanel>
+                                                <TabPanel value={tabIndex} index={0}>
+                                                    <ForestTable
+                                                        readOnly={false}
+                                                        width={width}
+                                                        height={height}
+                                                        {...props}
+                                                        data={forest}
+                                                    />
+                                                </TabPanel>
                                             </Box>
-                                        </TabPanel>
-                                        <TabPanel value={value} index={0}>
-                                            <ForestTable
-                                                readOnly={false}
-                                                width={width}
-                                                height={height}
-                                                {...props}
-                                                data={forest}
-                                            />
-                                        </TabPanel>
-                                    </Box>
-                            }
-                            </AutoSizer>
-                        </Box>
+                                    }
+                                    </AutoSizer>
+                                </Box>
+                                <Box className={classes.editor}>
+                                    <ReactJson src={json} onEdit={onJsonEdit}/>
+                                </Box>
+                            </Box>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </ModalManager>
+            </ModalManager>
         </MuiThemeProvider >);
 };
 
