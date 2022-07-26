@@ -98,7 +98,6 @@ export const getForest = (data) => {
         const newRange = forest.add([cursor, cursor2]);
         forest.attachRangeOfChildren({ index: 0, range: forest.rootField }, newRange);
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return forest;
 };
 
