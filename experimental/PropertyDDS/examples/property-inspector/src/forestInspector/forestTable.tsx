@@ -1,19 +1,20 @@
 import * as React from "react";
 
+import { Box, Chip, Switch, TextField, FormLabel, Button } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
+
 import {
     IInspectorTableProps,
     InspectorTable,
     IToTableRowsOptions,
-    IToTableRowsProps,
     typeidToIconMap,
-    IRowData,
 } from "@fluid-experimental/property-inspector-table";
-import { Box, Chip, Switch, TextField, FormLabel, Button } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
 
-import { TreeNavigationResult, JsonCursor, TreeType, EmptyKey, ITreeCursor, FieldKey,
+import { TreeNavigationResult, JsonCursor, FieldKey,
     jsonArray, jsonString, jsonBoolean, jsonNumber, jsonObject,
-    ObjectForest } from "@fluid-internal/tree";
+    buildForest, Cursor, ObjectForest } from "@fluid-internal/tree";
+
+import { IInspectorRowData, getDataFromCursor } from "../cursorData";
 
 const useStyles = makeStyles({
     boolColor: {
@@ -54,68 +55,52 @@ const useStyles = makeStyles({
     },
 }, { name: "JsonTable" });
 
-interface IJsonRowData extends IRowData<any> {
-    isAddProperty?: boolean;
-    name?: string;
-    value?: number | string | [] | boolean | Record<string, unknown>;
-    type?: TreeType;
-}
+export type IForestTableProps = IInspectorTableProps;
 
-const cursorToRowData = (
-    cursor: ITreeCursor, parentKey: FieldKey, key: FieldKey, idx: number, isReadOnly: boolean,
-): IJsonRowData => {
-    const type = cursor.type;
-    const value = type === jsonArray.name ? `[${cursor.length(EmptyKey)}]` : cursor.value;
-    const name = key as string || String(idx);
-    const id = `${parentKey}/${name}`;
-    const children: IJsonRowData[] = getDataFromCursor(cursor, [], isReadOnly, id as FieldKey);
-    const rowData: IJsonRowData = { id, name, value, type, children };
-    return rowData;
-};
-
-const getDataFromCursor = (
-    cursor: ITreeCursor, rows: IJsonRowData[], isReadOnly: boolean = true, parentKey: FieldKey = EmptyKey,
-): IJsonRowData[] => {
-    if (cursor.type === jsonArray.name) {
-        const len = cursor.length(EmptyKey);
-        for (let idx = 0; idx < len; idx++) {
-            const result = cursor.down(EmptyKey, idx);
-            if (result === TreeNavigationResult.Ok) {
-                rows.push(cursorToRowData(cursor, parentKey, EmptyKey, idx, isReadOnly));
-            }
-            cursor.up();
-        }
-    } else {
-        for (const key of cursor.keys) {
-            const result = cursor.down(key, 0);
-            if (result === TreeNavigationResult.Ok) {
-                rows.push(cursorToRowData(cursor, parentKey, key, 0, isReadOnly));
-            }
-            cursor.up();
-        }
-    }
-    if (!isReadOnly && (cursor.type === jsonArray.name || cursor.type === jsonObject.name)) {
-        const newRow: IJsonRowData = {
-            id: `${parentKey}/Add`,
-            isAddProperty: true,
-        };
-        rows.push(newRow);
-    }
-    return rows;
-};
-
-const toTableRows = ({ data: forest }: Partial<IJsonRowData>, props: IToTableRowsProps,
+const toTableRows = ({ data: forest }: Partial<IInspectorRowData>, props: any,
     _options?: Partial<IToTableRowsOptions>, _pathPrefix?: string,
-): IJsonRowData[] => {
-    const reader = forest.allocateCursor();
-    const result = forest.tryGet(forest.root, reader);
-    if (result === TreeNavigationResult.Ok) {
-        return getDataFromCursor(reader, [], props.readOnly);
+): IInspectorRowData[] => {
+    const rootId = props.documentId;
+    if (!forest) {
+        return [];
+    }
+    const reader: Cursor = forest.allocateCursor();
+    const result = forest.tryGet(forest.root(forest.rootField), reader);
+    const trees = forest.getRoot(forest.rootField);
+    if (result === TreeNavigationResult.Ok && trees?.length) {
+        const root: IInspectorRowData = {
+            id: rootId,
+            name: "/",
+            type: jsonObject.name,
+            children: [],
+        };
+        for (let idx = 0; idx < trees?.length; idx++) {
+            const treeId = `${rootId}/${String(idx)}`;
+            reader.set(forest.rootField, idx);
+            const tree: IInspectorRowData = {
+                id: treeId,
+                type: jsonObject.name,
+                name: `/${String(idx).padStart(3, "0")}`,
+                children: getDataFromCursor(reader, [], props.readOnly, treeId as FieldKey),
+            };
+            root.children?.push(tree);
+        }
+        return [root];
     }
     return [];
 };
 
-export type IForestTableProps = IInspectorTableProps;
+export const getForest = (data) => {
+    const forest: ObjectForest = buildForest();
+    if (data) {
+        const cursor = new JsonCursor(data);
+        const cursor2 = new JsonCursor({ foo: " bar ", buz: { fiz: 1 } });
+        const newRange = forest.add([cursor, cursor2]);
+        forest.attachRangeOfChildren({ index: 0, range: forest.rootField }, newRange);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return forest;
+};
 
 const forestTableProps: Partial<IForestTableProps> = {
     columns: ["name", "value", "type"],
@@ -158,18 +143,6 @@ const forestTableProps: Partial<IForestTableProps> = {
     height: 600,
 };
 
-export const getForest = (data: any = undefined) => {
-    const forest = new ObjectForest();
-    if (data) {
-        const cursor = new JsonCursor(data);
-        const newRange = forest.add([cursor]);
-        const dst = { index: 0, range: forest.rootField };
-        forest.attachRangeOfChildren(dst, newRange);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return forest;
-};
-
 export const ForestTable = (props: IForestTableProps) => {
     const classes = useStyles();
 
@@ -179,13 +152,13 @@ export const ForestTable = (props: IForestTableProps) => {
             {
                 name: ({ rowData, cellData, renderCreationRow, tableProps: { readOnly } }) => {
                     return (
-                        rowData.isAddProperty && !readOnly
+                        rowData.isNewDataRow && !readOnly
                             ? renderCreationRow(rowData)
                             : cellData
                     ) as React.ReactNode;
                 },
                 type: ({ rowData }) => {
-                    if (rowData.isAddProperty) {
+                    if (rowData.isNewDataRow) {
                         return <div></div>;
                     }
                     return <Box className={classes.typesBox}>

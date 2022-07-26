@@ -15,10 +15,6 @@ import {
 import { makeStyles } from "@material-ui/styles";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 
-import { PropertyProxy } from "@fluid-experimental/property-proxy";
-
-import { DataBinder } from "@fluid-experimental/property-binder";
-import { SharedPropertyTree } from "@fluid-experimental/property-dds";
 import AutoSizer from "react-virtualized-auto-sizer";
 
 import { Box, Tabs, Tab } from "@material-ui/core";
@@ -26,6 +22,7 @@ import ReactJson from "react-json-view";
 import { theme } from "./theme";
 import { JsonTable } from "./jsonInspector/jsonTable";
 import { PropertyTable } from "./propertyInspector/propertyTable";
+import { loadPropertyDDS } from "./propertyInspector/propertyData";
 import { ForestTable, getForest } from "./forestInspector/forestTable";
 
 const useStyles = makeStyles({
@@ -228,17 +225,11 @@ export const InspectorApp = (props: any) => {
         </MuiThemeProvider >);
 };
 
-export function renderApp(propertyTree: SharedPropertyTree, element: HTMLElement) {
-    const dataBinder = new DataBinder();
-
-    dataBinder.attachTo(propertyTree);
-
-    // Listening to any change the root path of the PropertyDDS, and rendering the latest state of the
-    // inspector tree-table.
-    dataBinder.registerOnPath("/", ["insert", "remove", "modify"], _.debounce(() => {
-        // Create an ES6 proxy for the DDS, this enables JS object interface for interacting with the DDS.
-        // Note: This is what currently inspector table expect for "data" prop.
-        const proxifiedDDS = PropertyProxy.proxify(propertyTree.root);
-        ReactDOM.render(<InspectorApp data={proxifiedDDS} />, element);
-    }, 20));
+export async function renderApp(element: HTMLElement, documentId: string, shouldCreateNew?: boolean, data?: any) {
+    const propertyDDS = data || await loadPropertyDDS({
+        documentId,
+        shouldCreateNew,
+        render: async (newData: any) => renderApp(element, documentId, false, newData),
+    });
+    ReactDOM.render(<InspectorApp data={propertyDDS} documentId={documentId}/>, element);
 }

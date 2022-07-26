@@ -266,7 +266,7 @@ class RootAnchor extends ObjectAnchor {
     }
 }
 
-type ObjectField = JsonableTree[];
+export type ObjectField = JsonableTree[];
 
 /**
  * TODO: track observations.
@@ -274,7 +274,7 @@ type ObjectField = JsonableTree[];
  * TODO: TextCursor is mostly a subset of this functionality.
  * Maybe do a refactoring to deduplicate this.
  */
-class Cursor implements ITreeSubscriptionCursor {
+export class Cursor implements ITreeSubscriptionCursor {
     state: ITreeSubscriptionCursorState = ITreeSubscriptionCursorState.Cleared;
     public constructor(public readonly forest: ObjectForest) { }
 
@@ -426,6 +426,6 @@ class Cursor implements ITreeSubscriptionCursor {
 /**
  * @returns an implementation of {@link IEditableForest} with no data or schema.
  */
-export function buildForest(): IEditableForest {
+export function buildForest(): ObjectForest {
     return new ObjectForest();
 }

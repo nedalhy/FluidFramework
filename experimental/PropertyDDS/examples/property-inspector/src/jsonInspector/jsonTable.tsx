@@ -1,18 +1,19 @@
 import * as React from "react";
 
+import { Box, Chip, Switch, TextField, FormLabel, Button } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
+
 import {
     IInspectorTableProps,
     InspectorTable,
     IToTableRowsOptions,
     IToTableRowsProps,
     typeidToIconMap,
-    IRowData,
 } from "@fluid-experimental/property-inspector-table";
-import { Box, Chip, Switch, TextField, FormLabel, Button } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
 
-import { TreeNavigationResult, JsonCursor, TreeType, EmptyKey, ITreeCursor, FieldKey,
-    jsonArray, jsonString, jsonBoolean, jsonNumber, jsonObject } from "@fluid-internal/tree";
+import { JsonCursor, jsonArray, jsonString, jsonBoolean, jsonNumber } from "@fluid-internal/tree";
+
+import { IInspectorRowData, getDataFromCursor } from "../cursorData";
 
 const useStyles = makeStyles({
     boolColor: {
@@ -53,58 +54,9 @@ const useStyles = makeStyles({
     },
 }, { name: "JsonTable" });
 
-interface IJsonRowData extends IRowData<any> {
-    name?: string;
-    value?: number | string | [] | boolean | Record<string, unknown>;
-    type?: TreeType;
-}
-
-const cursorToRowData = (
-    cursor: ITreeCursor, parentKey: FieldKey, key: FieldKey, idx: number, isReadOnly: boolean,
-): IJsonRowData => {
-    const type = cursor.type;
-    const value = type === jsonArray.name ? `[${cursor.length(EmptyKey)}]` : cursor.value;
-    const name = key as string || String(idx);
-    const id = `${parentKey}/${name}`;
-    const children: IJsonRowData[] = getDataFromCursor(cursor, [], isReadOnly, id as FieldKey);
-    const rowData: IJsonRowData = { id, name, value, type, children };
-    return rowData;
-};
-
-const getDataFromCursor = (
-    cursor: ITreeCursor, rows: IJsonRowData[], isReadOnly: boolean = true, parentKey: FieldKey = EmptyKey,
-): IJsonRowData[] => {
-    if (cursor.type === jsonArray.name) {
-        const len = cursor.length(EmptyKey);
-        for (let idx = 0; idx < len; idx++) {
-            const result = cursor.down(EmptyKey, idx);
-            if (result === TreeNavigationResult.Ok) {
-                rows.push(cursorToRowData(cursor, parentKey, EmptyKey, idx, isReadOnly));
-            }
-            cursor.up();
-        }
-    } else {
-        for (const key of cursor.keys) {
-            const result = cursor.down(key, 0);
-            if (result === TreeNavigationResult.Ok) {
-                rows.push(cursorToRowData(cursor, parentKey, key, 0, isReadOnly));
-            }
-            cursor.up();
-        }
-    }
-    if (!isReadOnly && (cursor.type === jsonArray.name || cursor.type === jsonObject.name)) {
-        const newRow: IJsonRowData = {
-            id: `${parentKey}/Add`,
-            isNewDataRow: true,
-        };
-        rows.push(newRow);
-    }
-    return rows;
-};
-
-const toTableRows = ({ data }: Partial<IJsonRowData>, props: IToTableRowsProps,
+const toTableRows = ({ data }: Partial<IInspectorRowData>, props: IToTableRowsProps,
     _options?: Partial<IToTableRowsOptions>, _pathPrefix?: string,
-): IJsonRowData[] => {
+): IInspectorRowData[] => {
     const jsonCursor = new JsonCursor(data);
     return getDataFromCursor(jsonCursor, [], props.readOnly);
 };

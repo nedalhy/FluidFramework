@@ -32,7 +32,7 @@ export async function createContainerAndRenderInElement(element: HTMLDivElement,
     const defaultObject = await getDefaultObjectFromContainer<PropertyTree>(container);
 
     // Given an IDiceRoller, we can render its data using the view we've created in our app.
-    renderApp(defaultObject.tree, document.getElementById(elementId)!);
+    await renderApp(document.getElementById(elementId)!, documentId, createNewFlag, defaultObject.tree);
 
     // Setting "fluidStarted" is just for our test automation
     // eslint-disable-next-line @typescript-eslint/dot-notation
@@ -47,16 +47,16 @@ async function setup() {
     if (leftElement === null) {
         throw new Error("sbs-left does not exist");
     }
-    await createContainerAndRenderInElement(leftElement, createNew, 'root1');
+    await createContainerAndRenderInElement(leftElement, createNew, "root1");
     const rightElement = document.getElementById("sbs-right") as HTMLDivElement;
     if (rightElement === null) {
         throw new Error("sbs-right does not exist");
     }
     // The second time we don't need to createNew because we know a Container exists.
-    await createContainerAndRenderInElement(rightElement, false, 'root2');
+    await createContainerAndRenderInElement(rightElement, false, "root2");
 }
 
-setup().catch((e)=> {
+setup().catch((e) => {
     console.error(e);
     console.log(
         "%cThere were issues setting up and starting the in memory FLuid Server",
