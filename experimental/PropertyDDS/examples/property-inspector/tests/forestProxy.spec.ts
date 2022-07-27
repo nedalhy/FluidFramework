@@ -1,12 +1,14 @@
 import { JsonableTree, ObjectForest, TextCursor } from "@fluid-internal/tree";
 import { brand } from "@fluid-internal/tree/dist/util";
+import { registerSchemas } from "@fluid-experimental/schemas";
+import { PropertyFactory } from "@fluid-experimental/property-properties";
+
 import { getForestProxy } from "../src/forestProxy";
 import { convertPSetSchema } from "../src/schemaConverter";
-import { registerSchemas } from "./registerSchemas";
-
-registerSchemas();
 
 describe("Forest proxy", () => {
+	beforeAll(() => registerSchemas(PropertyFactory));
+
 	let forest: ObjectForest;
 	const data: JsonableTree = {
 		type: brand("Test:Person-1.0.0"),
