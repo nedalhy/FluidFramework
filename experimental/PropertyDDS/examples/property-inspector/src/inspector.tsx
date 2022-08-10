@@ -19,11 +19,16 @@ import AutoSizer from "react-virtualized-auto-sizer";
 
 import { Box, Tabs, Tab } from "@material-ui/core";
 import ReactJson from "react-json-view";
+
+import { brand, JsonableTree } from "@fluid-internal/tree";
+
 import { theme } from "./theme";
 import { PropertyTable } from "./propertyInspector/propertyTable";
 import { loadPropertyDDS } from "./propertyInspector/propertyData";
 import { JsonTable } from "./jsonInspector/jsonTable";
-import { ForestTable, getForest } from "./forestInspector/forestTable";
+// import { ForestTable, getForest } from "./forestInspector/forestTable";
+import { ProxyTable, getForestProxy } from "./forestInspector/proxyTable";
+import { ProplikeTable } from "./forestInspector/proplikeTable";
 
 const useStyles = makeStyles({
     activeGraph: {
@@ -154,15 +159,31 @@ function TabPanel(props: TabPanelProps) {
     );
 }
 
+const customTypeData: JsonableTree = {
+    type: brand("Test:Person-1.0.0"),
+    fields: {
+        name: [
+            { value: "Adam", type: brand("String") },
+        ],
+        address: [{
+            fields: {
+                street: [{ value: "treeStreet", type: brand("String") }],
+            },
+            type: brand("Test:Address-1.0.0"),
+         }],
+    },
+};
+
 export const InspectorApp = (props: any) => {
     const classes = useStyles();
     const [json, setJson] = useState(customData);
-    const [forest, setForest] = useState(getForest(customData));
+    // const [forest, setForest] = useState(getForest(customData));
+    const forestProxy = getForestProxy(customTypeData, props.renderer);
     const [tabIndex, setTabIndex] = useState(0);
 
     const onJsonEdit = ({ updated_src }) => {
         setJson(updated_src);
-        setForest(getForest(updated_src));
+        // setForest(getForest(updated_src));
     };
 
     return (
@@ -175,7 +196,8 @@ export const InspectorApp = (props: any) => {
                         <Box sx={{ display: "flex", flexDirection: "row", width: "100%" }}>
                                 <Box sx={{ display: "flex", flexDirection: "column", width: "75%" }}>
                                     <Tabs value={tabIndex} onChange={(event, newTabIndex) => setTabIndex(newTabIndex)}>
-                                        <Tab label="Forest Cursor" id="tab-forestCursor"/>
+                                        <Tab label="Proplike Proxy" id="tab-proplikeProxy"/>
+                                        <Tab label="Forest Proxy" id="tab-proxyForest"/>
                                         <Tab label="JSON Cursor" id="tab-jsonCursor"/>
                                         <Tab label="PropertyDDS" id="tab-propertyDDS"/>
                                     </Tabs>
@@ -183,7 +205,7 @@ export const InspectorApp = (props: any) => {
                                     {
                                         ({ width, height }) =>
                                             <Box sx={{ display: "flex" }}>
-                                                <TabPanel value={tabIndex} index={2}>
+                                                <TabPanel value={tabIndex} index={3}>
                                                     <PropertyTable
                                                         // readOnly={true}
                                                         width={width}
@@ -191,7 +213,7 @@ export const InspectorApp = (props: any) => {
                                                         {...props}
                                                     />
                                                 </TabPanel>
-                                                <TabPanel value={tabIndex} index={1}>
+                                                <TabPanel value={tabIndex} index={2}>
                                                     <JsonTable
                                                         readOnly={false}
                                                         width={width}
@@ -201,12 +223,21 @@ export const InspectorApp = (props: any) => {
                                                     />
                                                 </TabPanel>
                                                 <TabPanel value={tabIndex} index={0}>
-                                                    <ForestTable
+                                                    <ProplikeTable
                                                         readOnly={false}
                                                         width={width}
                                                         height={height}
                                                         {...props}
-                                                        data={forest}
+                                                        data={forestProxy}
+                                                    />
+                                                </TabPanel>
+                                                <TabPanel value={tabIndex} index={1}>
+                                                    <ProxyTable
+                                                        readOnly={false}
+                                                        width={width}
+                                                        height={height}
+                                                        {...props}
+                                                        data={forestProxy}
                                                     />
                                                 </TabPanel>
                                             </Box>
@@ -225,10 +256,11 @@ export const InspectorApp = (props: any) => {
 };
 
 export async function renderApp(element: HTMLElement, documentId: string, shouldCreateNew?: boolean, data?: any) {
+    const render = async (newData: any) => renderApp(element, documentId, false, newData);
     const propertyDDS = data || await loadPropertyDDS({
         documentId,
         shouldCreateNew,
-        render: async (newData: any) => renderApp(element, documentId, false, newData),
+        render,
     });
-    ReactDOM.render(<InspectorApp data={propertyDDS} documentId={documentId}/>, element);
+    ReactDOM.render(<InspectorApp data={propertyDDS} documentId={documentId} renderer={render}/>, element);
 }
