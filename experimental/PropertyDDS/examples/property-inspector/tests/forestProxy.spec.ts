@@ -2,16 +2,16 @@
  * Copyright (c) Microsoft Corporation and contributors. All rights reserved.
  * Licensed under the MIT License.
  */
-import { JsonableTree, buildForest } from "@fluid-internal/tree";
+import { JsonableTree, ObjectForest, TextCursor } from "@fluid-internal/tree";
 import { brand } from "@fluid-internal/tree/dist/util";
 import { registerSchemas } from "@fluid-experimental/schemas";
 import { PropertyFactory } from "@fluid-experimental/property-properties";
 
-import { proxifyForest } from "../src/forestProxy";
+import { getForestProxy } from "../src/forestProxy";
 import { convertPSetSchema } from "../src/schemaConverter";
 
 describe("Forest proxy", () => {
-	let forest;
+	let forest: ObjectForest;
 	const data: JsonableTree = {
 		type: brand("Test:Person-1.0.0"),
 		fields: {
@@ -33,18 +33,18 @@ describe("Forest proxy", () => {
 	beforeAll(() => registerSchemas(PropertyFactory));
 
 	beforeEach(() => {
-		forest = buildForest();
+		forest = new ObjectForest();
 		convertPSetSchema("Test:Person-1.0.0", forest.schema);
+		// Not sure how best to create data from Schema
+		const cursor = new TextCursor(data);
+		const newRange = forest.add([cursor]);
+		const dst = { index: 0, range: forest.rootField };
+		forest.attachRangeOfChildren(dst, newRange);
 	});
 
 	it("Should be able to proxify forest", () => {
-		const proxy: any = proxifyForest(data, forest);
+		const proxy = getForestProxy(forest.allocateCursor(), forest);
 		expect(proxy).toBeDefined();
 		expect(Object.keys(proxy).length).toBeGreaterThan(0);
-		expect(proxy.name).toMatchObject({ value: "Adam", type: "String" });
-		const { value, type } = proxy.address;
-		expect(value).toBeUndefined();
-		expect(type).toEqual("Test:Address-1.0.0");
-		expect(proxy.address.street).toMatchObject({ value: "treeStreet", type: "String" });
 	});
 });

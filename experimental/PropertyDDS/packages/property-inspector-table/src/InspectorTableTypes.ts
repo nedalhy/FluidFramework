@@ -135,7 +135,7 @@ export interface IInspectorTableProps<T extends IRowData<T> = any> extends BaseT
   /**
    * The raw data to be visualized.
    */
-  data?: T;
+  data?: any;
   /**
    *  Reference property handler
    */
