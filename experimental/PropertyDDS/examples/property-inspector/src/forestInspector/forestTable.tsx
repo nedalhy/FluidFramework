@@ -15,14 +15,17 @@ import {
 } from "@fluid-experimental/property-inspector-table";
 
 import { TreeNavigationResult,
+    JsonCursor,
     FieldKey,
     jsonArray, jsonString, jsonBoolean, jsonNumber, jsonObject,
-    JsonCursor,
-    ObjectForest,
-    Cursor,
+    Cursor, ObjectForest,
+	brand, TextCursor,
 } from "@fluid-internal/tree";
 
 import { IInspectorRowData, getDataFromCursor } from "../cursorData";
+
+import { convertPSetSchema } from "../schemaConverter";
+import { getForestProxy } from "../forestProxy";
 
 const useStyles = makeStyles({
     boolColor: {
@@ -93,6 +96,7 @@ const toTableRows = ({ data: forest }: Partial<IInspectorRowData>, props: any,
             };
             root.children?.push(tree);
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return [root];
     }
     return [];
@@ -100,10 +104,28 @@ const toTableRows = ({ data: forest }: Partial<IInspectorRowData>, props: any,
 
 export const getForest = (data) => {
     const forest: ObjectForest = new ObjectForest();
+    convertPSetSchema("Test:Person-1.0.0", forest.schema);
     if (data) {
         const cursor = new JsonCursor(data);
         const cursor2 = new JsonCursor({ foo: " bar ", buz: { fiz: 1 } });
-        const newRange = forest.add([cursor, cursor2]);
+        // Not sure how best to create data from Schema
+        const textCursor = new TextCursor({
+            type: brand("Test:Person-1.0.0"),
+            fields: {
+                name: [{ value: "Adam", type: brand("String") }],
+                address: [{
+                    fields: {
+                        street: [{ value: "treeStreet", type: brand("String") }],
+                    },
+                    type: brand("Test:Address-1.0.0"),
+                 }],
+            },
+        });
+        const proxy = getForestProxy(textCursor, forest, 2);
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        window["__proxy"] = proxy;
+        const newRange = forest.add([cursor, cursor2, textCursor]);
+        // const newRange = forest.add([textCursor]);
         forest.attachRangeOfChildren({ index: 0, range: forest.rootField }, newRange);
     }
     return forest;

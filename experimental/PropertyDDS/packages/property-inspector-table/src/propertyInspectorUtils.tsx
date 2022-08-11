@@ -484,7 +484,7 @@ export const fillExpanded = (
     }
   }
 };
-export const isPropertyProxy = (p: any): p is BaseProxifiedProperty => {
+const isPropertyProxy = (p: any): p is BaseProxifiedProperty => {
   return p.getProperty && PropertyFactory.instanceOf(p.getProperty(), "BaseProperty");
 };
 const invalidReference = (parentProxy: BaseProxifiedProperty, id: string | number) => {

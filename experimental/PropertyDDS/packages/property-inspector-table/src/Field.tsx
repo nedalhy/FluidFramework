@@ -11,7 +11,6 @@ import { EnumView } from "./PropertyViews/Enum";
 import { NumberView } from "./PropertyViews/Number";
 import { StringView } from "./PropertyViews/String";
 import { Utils } from "./typeUtils";
-import { isPropertyProxy } from "./propertyInspectorUtils";
 
 function onInlineEditEnd(val: string | number | boolean, props: IEditableValueCellProps) {
     const { rowData } = props;
@@ -20,7 +19,7 @@ function onInlineEditEnd(val: string | number | boolean, props: IEditableValueCe
         val = !isNaN(+val) ? +val : val;
     }
 
-    const proxiedParent = isPropertyProxy(rowData.parent) ? rowData.parent : PropertyProxy.proxify(rowData.parent!);
+    const proxiedParent = PropertyProxy.proxify(rowData.parent!);
     const parentContext = rowData.parent!.getContext();
     try {
         switch (parentContext) {
