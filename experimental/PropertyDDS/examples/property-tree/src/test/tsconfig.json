@@ -3,6 +3,7 @@
     "compilerOptions": {
         "noImplicitAny": true,
         "noUnusedLocals": false,
+        "skipLibCheck": true,
         "rootDir": "./",
         "outDir": "../../dist/test",
         "types": [

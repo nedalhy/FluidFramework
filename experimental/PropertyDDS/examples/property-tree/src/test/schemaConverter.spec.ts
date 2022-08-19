@@ -46,7 +46,7 @@ describe("Schema Conversion", () => {
 
 // person.addresses.push({ street: "hi", post: "2313"})
 
-// const dataPoint = {   
+// const dataPoint = {
 //     fields: {
 //         x: [value: "15.5", type: "Float32"],
 //         x: [value: "16.9",  type: "Float32"]

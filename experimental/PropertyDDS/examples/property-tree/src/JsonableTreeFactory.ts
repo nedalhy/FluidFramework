@@ -2,7 +2,7 @@ import { TypeIdHelper } from "@fluid-experimental/property-changeset";
 import {
 	FieldSchema, JsonableTree,
 	jsonString, JsonCursor, brand, jsonNumber, jsonBoolean, jsonNull,
-	jsonArray, TreeSchema, FieldMap, PlaceholderTree, StoredSchemaRepository
+	jsonArray, TreeSchema, FieldMap, PlaceholderTree, StoredSchemaRepository,
 } from "@fluid-internal/tree";
 import { Jsonable } from "@fluidframework/datastore-definitions";
 
