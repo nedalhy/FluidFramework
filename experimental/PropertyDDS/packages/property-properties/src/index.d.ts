@@ -778,7 +778,8 @@ declare module "@fluid-experimental/property-properties" {
            */
           constructor(in_params: ArrayProperty_ArrayProperty_in_params_TYPE, in_constructor: object, in_primitiveType: Boolean, in_scope: string | undefined);
 
-          public get length()
+          public get length(): number;
+        
           /**
            * Gets the array element at a given index
            * @param in_position the target index
@@ -2184,6 +2185,10 @@ declare module "@fluid-experimental/property-properties" {
 
         class PropertyTemplate {
             /**
+             * Extracts typeids directly referred to in a template
+             */
+            static extractDependencies(template: PropertyTemplate): Array<any>;
+            /**
              * Constructor for creating a PropertyTemplate based on the given parameters.
              * @param in_params List of parameters
              */
@@ -2213,11 +2218,7 @@ declare module "@fluid-experimental/property-properties" {
              * Determines if the argument is a template structure
              */
             public isTemplate(): Boolean;
-            /**
-             * Extracts typeids directly referred to in a template
-             */
-            public extractDependencies(): Array<any>;
-
+           
             constants: any[];
 
             context: string;
@@ -2682,7 +2683,7 @@ declare module "@fluid-experimental/property-properties" {
          *
          * @param enabled - Are the validations enabled?
          */
-        function enableValidations(enabled : boolean);
+        function enableValidations(enabled : boolean): void;
     }
     export = PROPERTY_TREE_NS;
 }
