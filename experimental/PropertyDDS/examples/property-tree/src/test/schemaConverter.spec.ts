@@ -4,17 +4,14 @@
  */
 
 import { PropertyFactory } from "@fluid-experimental/property-properties";
-import { emptyField, neverTree, StoredSchemaRepository } from "@fluid-internal/tree";
 import { registerSchemas } from "@fluid-experimental/schemas";
 
 import { convertPSetSchema } from "../schemaConverter";
+import { getSchemaRepository } from "./common";
 
 describe("Schema Conversion", () => {
     it("Should convert a simple schema", () => {
-        const repository = new StoredSchemaRepository({
-            defaultTreeSchema: neverTree,
-            defaultGlobalFieldSchema: emptyField,
-        });
+        const repository = getSchemaRepository();
 
         registerSchemas(PropertyFactory);
 

@@ -27,13 +27,14 @@ export { ITreeCursor, TreeNavigationResult, IEditableForest,
 
 export {
     LocalFieldKey, GlobalFieldKey, TreeSchemaIdentifier, NamedTreeSchema, Named,
-    FieldSchema, ValueSchema, TreeSchema,
+    FieldSchema, ValueSchema, TreeSchema, emptyMap, emptySet,
     StoredSchemaRepository, FieldKindIdentifier,
     rootFieldKey, TreeTypeSet, SchemaData, SchemaPolicy, SchemaDataReader,
 } from "./schema-stored";
 
 export {
     Brand,
+    brand,
     BrandedType,
     Opaque,
     extractFromOpaque,
