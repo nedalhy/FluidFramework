@@ -16,3 +16,5 @@ export * from "./CustomChip";
 export * from "./TypeColumn";
 export * from "./utils";
 export * from "./InspectorTableTypes";
+export * from "./Builders";
+export * from "./NewDataForm";

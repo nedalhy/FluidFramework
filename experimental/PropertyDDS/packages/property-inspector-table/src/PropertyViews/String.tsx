@@ -3,11 +3,9 @@
  * Licensed under the MIT License.
  */
 
-import { ContainerProperty } from "@fluid-experimental/property-properties";
 import TextField, { TextFieldProps } from "@material-ui/core/TextField";
 import * as React from "react";
 import { IEditableValueCellProps } from "../InspectorTableTypes";
-import { getPropertyValue } from "../propertyInspectorUtils";
 
 type StringProps = (IEditableValueCellProps & {
   onSubmit: (val: string, props: IEditableValueCellProps) => void;
@@ -28,7 +26,7 @@ const handleKeyDown: HandleKeyDownType = (event, props) => {
 
 export const StringView: React.FunctionComponent<StringProps> = (props) => {
   const {
-    followReferences,
+    // followReferences,
     TextFieldProps: textFieldProps,
     rowData,
     onBlur = (event) => { onSubmit(event.currentTarget.value, props); },
@@ -38,8 +36,11 @@ export const StringView: React.FunctionComponent<StringProps> = (props) => {
     readOnly,
   } = props;
 
-  const value = getPropertyValue(rowData.parent as ContainerProperty, rowData.name, rowData.context, rowData.typeid,
-    followReferences);
+  const value = rowData.value;
+
+  // @TODO remove this logic (manual tests does not show the need for it)
+  //   getPropertyValue(rowData.parent as ContainerProperty, rowData.name, rowData.context, rowData.typeid,
+  //   followReferences);
 
   return (
     <TextField

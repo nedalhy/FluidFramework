@@ -41,8 +41,10 @@ export const NumberView: React.FunctionComponent<NumberProps> = (props) => {
     ...restProps // tslint:disable-line:trailing-comma
   } = props;
 
-  const value = getPropertyValue(rowData.parent as ContainerProperty, rowData.name, rowData.context, rowData.typeid,
-    followReferences);
+  const value = rowData.value;
+  // ||
+    // getPropertyValue(rowData.parent as ContainerProperty, rowData.name, rowData.context, rowData.typeid,
+    // followReferences);
 
   return (
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

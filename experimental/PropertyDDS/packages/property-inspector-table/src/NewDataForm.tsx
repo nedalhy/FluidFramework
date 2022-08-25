@@ -3,7 +3,8 @@
  * Licensed under the MIT License.
  */
 
-import { ContainerProperty, PropertyFactory } from "@fluid-experimental/property-properties";
+// @TODO remove this dependency, user should be able to fetch schemas from different sources.
+import { PropertyFactory } from "@fluid-experimental/property-properties";
 import Button from "@material-ui/core/Button";
 import InputAdornment from "@material-ui/core/InputAdornment";
 import { makeStyles } from "@material-ui/core/styles";
@@ -125,6 +126,20 @@ export interface INewDataFormProps {
    * Data Inspector row data for current row
    */
   rowData: IInspectorRow;
+  /**
+   * Checks whether the parent row has property with similar id.
+   */
+  hasId: (rowData: IInspectorRow, id: string) => boolean;
+  /**
+   * Gets parent context.
+   * @TODO this is temporary solution to not introduce many breaking changes at ones
+   */
+  getParentContext: (rowData: IInspectorRow) => string | undefined;
+  /**
+   * Gets parent typeid.
+   * @TODO this is temporary solution to not introduce many breaking changes at ones
+   */
+  getParentType: (rowData: IInspectorRow) => string | undefined;
 }
 
 /**
@@ -149,13 +164,11 @@ const notNamedCollections = ["set", "array"];
 const setContext: IDecoratedSelectOptionType = { value: "set", label: "Set", icon: <TypeIcon typeId={"Set"} /> };
 
 export const NewDataForm: React.FunctionComponent<INewDataFormProps> = (props) => {
-  const { options, onDataCreate, onCancelCreate, rowData } = props;
+  const { options, onDataCreate, onCancelCreate, rowData, hasId, getParentContext, getParentType } = props;
   const classes = useStyles();
   const [inputName, setInputName] = useState("");
   const [isCreating, setCreating] = useState(false);
   const [isNamedProp, setIsNamedProp] = useState(false);
-
-  const siblingIds = rowData.parent ? (rowData.parent as ContainerProperty).getIds() : [];
 
   // Reshape the 'options' array which into an object suitable for consumption by react-select.
   // Also into each option add an SVG icon corresponding to its label.
@@ -166,12 +179,15 @@ export const NewDataForm: React.FunctionComponent<INewDataFormProps> = (props) =
   let defaultTypeOption: IDecoratedSelectOptionType;
   const defaultContainerOption: IDecoratedSelectOptionType = listOfContextOptions[0];
 
+  const parentType = getParentType(rowData) || "";
+  const parentContext = getParentContext(rowData) || "";
+
   const excludeUninheritedTemplates = () => {
     typeOptions.forEach((subType) => {
       const subTypeOptions: IDecoratedSelectOptionType[] = [];
       subType.options.forEach((typ) => {
         const parentTypes = PropertyFactory.getAllParentsForTemplate(typ.value);
-        if (typ.value === rowData.parent!.getTypeid() || parentTypes.includes(rowData.parent!.getTypeid())) {
+        if (typ.value === parentType || parentTypes.includes(parentType)) {
           subTypeOptions.push(typ);
         }
       });
@@ -188,11 +204,11 @@ export const NewDataForm: React.FunctionComponent<INewDataFormProps> = (props) =
   // Choose default value depending on the context
   // For "single" context  or when parent is undefined we choose the first option from the "options" property
   // For sets, maps and arrays we need to extract the typeid of parent collection and set contextOptions only to single
-  if (!rowData.parent || rowData.parent!.getContext() === "single") {
+  if (!rowData.parent || parentContext) {
     defaultTypeOption = typeOptions[0].options[0];
   } else {
     excludeUninheritedTemplates();
-    defaultTypeOption = filterTypeOptions(rowData.parent!.getTypeid());
+    defaultTypeOption = filterTypeOptions(parentType);
     listOfContextOptions = contextOptions.filter((cOption) => cOption.value === "single");
   }
 
@@ -205,7 +221,7 @@ export const NewDataForm: React.FunctionComponent<INewDataFormProps> = (props) =
     const parentTypeId = selectedTypeOption.value;
     const parentTypes = PropertyFactory.getAllParentsForTemplate(parentTypeId);
     // sets can be created only for properties inheriting from NamedProperty
-    if (rowData.parent && rowData.parent.getContext() === "single" &&
+    if (parentContext === "single" &&
       (selectedTypeOption.value === "NamedProperty" || parentTypes.includes("NamedProperty"))) {
       setIsNamedProp(true);
     } else {
@@ -243,7 +259,7 @@ export const NewDataForm: React.FunctionComponent<INewDataFormProps> = (props) =
     </Button>
   );
 
-  const isSiblingFound = siblingIds.includes(inputName);
+  const isSiblingFound = hasId(rowData, inputName);
   const createBtn = (
     <Button
       id="createDataButton"
@@ -252,7 +268,7 @@ export const NewDataForm: React.FunctionComponent<INewDataFormProps> = (props) =
       style={{ minWidth: "0px" }}
       className={classNames(classes.button, classes.createButton)}
       disabled={isSiblingFound || rowData.parent &&
-         (!notNamedCollections.includes(rowData.parent.getContext()) && !inputName.trim())}
+         (!notNamedCollections.includes(parentContext) && !inputName.trim())}
       onClick={handleCreateData}
     >
       {isCreating ? "Creating" : "Create"}
@@ -285,7 +301,7 @@ export const NewDataForm: React.FunctionComponent<INewDataFormProps> = (props) =
   );
 
   const nameInput = (height: number, width: number) => {
-    if (rowData.parent && notNamedCollections.includes(rowData.parent!.getContext())) {
+    if (rowData.parent && notNamedCollections.includes(parentContext)) {
       return (<div />);
     }
     const selectedTypeOrCollectionLabel = selectedContainerOption.value === "single"

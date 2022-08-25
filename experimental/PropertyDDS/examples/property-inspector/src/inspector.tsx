@@ -3,28 +3,36 @@
  * Licensed under the MIT License.
  */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 
 import _ from "lodash";
+import { proxyTargetSymbol, getTypeSymbol, UnwrappedEditableTree, Value, isPrimitive } from "@fluid-internal/tree";
 import {
-     IDataCreationOptions,
-     IInspectorRow,
-     IInspectorTableProps,
-     InspectorTable,
-     ModalManager,
-     ModalRoot,
-     fetchRegisteredTemplates,
-     handlePropertyDataCreation,
-    } from "@fluid-experimental/property-inspector-table";
+    IDataCreationOptions,
+    IInspectorTableProps,
+    InspectorTable,
+    ModalManager,
+    ModalRoot,
+    fetchRegisteredTemplates,
+    handlePropertyDataCreation,
+    IToTableRowsProps,
+    IToTableRowsOptions,
+    nameCellRenderer,
+    typeCellRenderer,
+    defaultValueCellRenderer,
+    NewDataForm,
+    getShortId,
+    IRowData,
+} from "@fluid-experimental/property-inspector-table";
 
+import { Tabs, Tab } from "@material-ui/core";
 import { makeStyles } from "@material-ui/styles";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 
 import { PropertyProxy } from "@fluid-experimental/property-proxy";
 
 import { DataBinder } from "@fluid-experimental/property-binder";
-import { SharedPropertyTree } from "@fluid-experimental/property-dds";
 import AutoSizer from "react-virtualized-auto-sizer";
 
 import { theme } from "./theme";
@@ -67,7 +75,17 @@ const useStyles = makeStyles({
     },
 }, { name: "InspectorApp" });
 
-export const handleDataCreationOptionGeneration = (rowData: IInspectorRow, nameOnly: boolean): IDataCreationOptions => {
+interface PropertyRow<T = UnwrappedEditableTree> extends IRowData<T> {
+    context?: string;
+    typeid: string;
+    isReference?: boolean;
+    parent?: T;
+    value: Value;
+    name: string;
+}
+
+export const handleDataCreationOptionGeneration = (rowData: PropertyRow, nameOnly: boolean):
+    IDataCreationOptions => {
     if (nameOnly) {
         return { name: "property" };
     }
@@ -84,26 +102,217 @@ const tableProps: Partial<IInspectorTableProps> = {
     height: 600,
 };
 
+const getChildren = (data, pathPrefix?: string): IInspectorRow[] => {
+    const rows: IInspectorRow[] = [];
+    if (data === undefined) {
+        return rows;
+    }
+    for (const key of Object.keys(data)) {
+        const { value, type } = data[key];
+        if (value !== undefined) {
+            const row: IInspectorRow = {
+                id: `${pathPrefix}/${key}`,
+                name: key,
+                context: "single",
+                children: [],
+                isReference: false,
+                value,
+                typeid: type || "",
+                parent: data,
+            };
+            rows.push(row);
+        } else if (editableTreeProxySymbol in data[key] && Object.keys(data[key]).length) {
+            const row: IInspectorRow = {
+                id: `${pathPrefix}/${key}`,
+                name: key,
+                context: "single",
+                children: getChildren(data[key], `${pathPrefix}/${key}`),
+                isReference: false,
+                typeid: type || "",
+                parent: data,
+            };
+            rows.push(row);
+        }
+    }
+    return rows;
+};
+
+const jsonTableProps: Partial<IInspectorTableProps> = {
+    ...tableProps,
+    toTableRows: (
+        {
+            data, id = "",
+        }: IInspectorRow,
+        props: IToTableRowsProps,
+        options: Partial<IToTableRowsOptions> = {},
+        pathPrefix: string = "",
+    ): IInspectorRow[] => {
+        const rows: IInspectorRow[] = [];
+        if (data === undefined) {
+            return rows;
+        }
+        const root: IInspectorRow = {
+            name: "root",
+            id: "root",
+            context: "single",
+            typeid: data.type || "",
+        };
+        root.children = getChildren(data, root.id);
+        rows.push(root);
+        return rows;
+    },
+};
+
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+
+    return (
+      <div
+        role="tabpanel"
+        hidden={value !== index}
+        id={`simple-tabpanel-${index}`}
+        {...other}
+      >
+        {value === index && (children)}
+      </div>
+    );
+}
+
 export const InspectorApp = (props: any) => {
     const classes = useStyles();
+    const [json, setJson] = useState(person);
+    const [tabIndex, setTabIndex] = useState(0);
 
+    const { dataBinder, editableTree } = inspectorProps;
+
+    const editableForestProxy = buildProxy(editableTree, json, true);
+
+    const onJsonEdit = ({ updated_src }) => {
+        setJson(updated_src);
+    };
+
+    const traverse = (jsonObj, pathPrefix = "", expanded) => {
+        expanded[getShortId(pathPrefix)] = true;
+        for (const key of Object.keys(jsonObj)) {
+            const { value } = jsonObj[key];
+            if (value !== undefined) {
+                expanded[getShortId(pathPrefix, key)] = true;
+            } else if (editableTreeProxySymbol in jsonObj[key] && Object.keys(jsonObj[key]).length) {
+                traverse(jsonObj[key], `${pathPrefix}/${key}`, expanded);
+            }
+        }
+    };
+
+    const jsonTableProps: Partial<IInspectorTableProps> = {
+        ...tableProps,
+        expandAll: (data) => {
+            const expanded = {};
+            traverse(data, "root", expanded);
+            return expanded;
+        },
+        fillExpanded: () => { },
+        generateForm: () => true,
+        dataCreationHandler: async (_rowData, name: string, typeid: string, context: string) => {
+            console.log(`Creating a property with the these values: ${name}, ${typeid}, ${context}`);
+        },
+        addDataForm: ({ handleCancelCreate, handleCreateData, rowData, options, styleClass }) => (
+            <div className={styleClass}>
+                <NewDataForm
+                    onCancelCreate={handleCancelCreate}
+                    onDataCreate={handleCreateData}
+                    options={options}
+                    rowData={rowData}
+                    hasId={(_rowData, id) => Object.keys(rowData.parent).indexOf(id) !== -1}
+                    getParentType={() => rowData.parent.type as string}
+                    getParentContext={() => "single"} // @TODO
+                />
+            </div>
+        ),
+        columnsRenderers: {
+            name: nameCellRenderer,
+            value: defaultValueCellRenderer({
+                onSubmit: (_val, props) => {
+                    // const { rowData } = props;
+                    // @TODO enable this line when EditableTree allow edits
+                    // rowData.parent[rowData.name] = val;
+                    // json[rowData.id] = val;
+                    // setJson({ ...json });
+                    console.log(_val, props);
+                },
+            }),
+            type: typeCellRenderer,
+        },
+        toTableRows: (
+            {
+                data, id = "",
+            }: PropertyRow,
+            props: IToTableRowsProps,
+            options: Partial<IToTableRowsOptions> = {},
+            pathPrefix: string = "",
+        ): PropertyRow[] => {
+            const rows: PropertyRow[] = [];
+            if (data === undefined || Object.keys(data).length === 0) {
+                return rows;
+            }
+            const root: PropertyRow = {
+                name: "root",
+                id: getShortId("root"),
+                context: "single",
+                typeid: data[getTypeSymbol]().name || "",
+                value: undefined,
+            };
+            root.children = getChildren(data, "root");
+            rows.push(root);
+            return rows;
+        },
+    };
     return (
         <MuiThemeProvider theme={theme}>
             <ModalManager>
                 <ModalRoot />
                 <div className={classes.root}>
                     <div className={classes.horizontalContainer}>
-                        <div className={classes.tableContainer}>
-                        <AutoSizer>
-                                {
-                                ({ width, height }) =>
-                                            <InspectorTable
-                                                {...tableProps}
-                                                width={width}
-                                                height={height}
-                                                {...props} />
-                                }
-                        </AutoSizer>
+                        <div className={classes.editor}>
+                            <ReactJson src={json} onEdit={onJsonEdit} />
+                        </div>
+                        <div className={classes.verticalContainer}>
+                            <Tabs value={tabIndex} onChange={(event, newTabIndex) => setTabIndex(newTabIndex)}>
+                                <Tab label="Editable Tree" id="tab-json" />
+                                <Tab label="PropertyDDS" id="tab-propertyDDS" />
+                            </Tabs>
+                            <div className={classes.tableContainer}>
+                                <AutoSizer>
+                                    {
+                                        ({ width, height }) =>
+                                            <div className={classes.horizontalContainer}>
+                                                <TabPanel value={tabIndex} index={1}>
+                                                    <MyInspectorTable
+                                                        width={width}
+                                                        height={height}
+                                                        dataBinder={dataBinder}
+                                                        {...inspectorProps}
+                                                    />
+                                                </TabPanel>
+                                                <TabPanel value={tabIndex} index={0}>
+                                                    <InspectorTable
+                                                        readOnly={false}
+                                                        {...jsonTableProps}
+                                                        width={width}
+                                                        height={height}
+                                                        {...inspectorProps}
+                                                        data={editableForestProxy}
+                                                    />
+                                                </TabPanel>
+                                            </div>
+                                    }
+                                </AutoSizer>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -111,17 +320,12 @@ export const InspectorApp = (props: any) => {
         </MuiThemeProvider>);
 };
 
-export function renderApp(propertyTree: SharedPropertyTree, element: HTMLElement) {
+export function renderApp(container: any, element: HTMLElement) {
+    const { propertyTree, editableTree } = container.initialObjects;
+
     const dataBinder = new DataBinder();
 
     dataBinder.attachTo(propertyTree);
 
-    // Listening to any change the root path of the PropertyDDS, and rendering the latest state of the
-    // inspector tree-table.
-    dataBinder.registerOnPath("/", ["insert", "remove", "modify"], _.debounce(() => {
-        // Create an ES6 proxy for the DDS, this enables JS object interface for interacting with the DDS.
-        // Note: This is what currently inspector table expect for "data" prop.
-        const proxifiedDDS = PropertyProxy.proxify(propertyTree.root);
-        ReactDOM.render(<InspectorApp data={proxifiedDDS} />, element);
-    }, 20));
+    ReactDOM.render(<InspectorApp dataBinder={dataBinder} editableTree={editableTree} />, element);
 }

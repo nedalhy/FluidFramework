@@ -48,3 +48,9 @@ export const borderGrayColor = "#ECEEF0";
 export const textDarkColor = "#3C3C3C";
 
 export const transparentShadowColor = "rgba(0,0,0,0)";
+
+// Bindable empty callback function.
+export const emptyCallback = function(_args: any) {};
+
+// Bindable empty callback function.
+export const emptyPromiseCallback = async function(_args: any) {};

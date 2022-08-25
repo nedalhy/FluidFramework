@@ -8,7 +8,7 @@ import * as React from 'react';
 import { InspectorDecorator } from './InspectorDecorator';
 import { InspectorTableDecorator } from './InspectorTableDecorator';
 import { IInspectorRow } from './InspectorTableTypes';
-import { NewDataForm } from './NewDataForm';
+import { PropertyNewDataForm } from './propertyInspectorUtils';
 
 storiesOf('NewDataForm', module)
   .addDecorator(InspectorDecorator)
@@ -16,7 +16,7 @@ storiesOf('NewDataForm', module)
   .add('default', () => {
     return (
       <div style={{border: '1px solid rgba(1,1,1,0)', width: '400px', fontFamily: 'sans-serif'}}>
-          <NewDataForm
+          <PropertyNewDataForm
             onCancelCreate={() => alert('onCancelCreate called')}
             onDataCreate={(rowData: IInspectorRow, name: string, typeid: string, context: string) =>
               alert(
