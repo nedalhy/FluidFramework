@@ -6,15 +6,18 @@
 import { forEachProperty } from "@fluid-experimental/property-binder";
 import { TypeIdHelper } from "@fluid-experimental/property-changeset";
 import {
+  ArrayProperty,
   BaseProperty,
   ContainerProperty,
   MapProperty,
+  NodeProperty,
   PropertyFactory,
   ReferenceArrayProperty,
   ReferenceMapProperty,
   ReferenceProperty,
+  SetProperty,
 } from "@fluid-experimental/property-properties";
-import { BaseProxifiedProperty, PropertyProxy } from "@fluid-experimental/property-proxy";
+import { BaseProxifiedProperty, PropertyProxy, ProxifiedMapProperty } from "@fluid-experimental/property-proxy";
 import Tooltip from "@material-ui/core/Tooltip";
 import memoize from "memoize-one";
 import React from "react";
@@ -23,9 +26,9 @@ import { createStyles, withStyles } from "@material-ui/core";
 import { EditableValueCell } from "./EditableValueCell";
 import { TypeColumn } from "./TypeColumn";
 import { InspectorMessages, minRowWidth, rowWidthInterval } from "./constants";
-import { HashCalculator } from "./HashCalculator";
 import {
   ColumnRendererType,
+  IEditableValueCellProps,
   IExpandedMap, IInspectorRow, IInspectorSearchMatch,
   IPropertyToTableRowOptions,
   IToTableRowsOptions, IToTableRowsProps, SearchResult,
@@ -36,6 +39,8 @@ import { ThemedSkeleton } from "./ThemedSkeleton";
 import { NewDataForm } from "./NewDataForm";
 import { EditReferencePath } from "./EditReferencePath";
 import { getDefaultInspectorTableIcons } from "./icons";
+import { getShortId, renderUneditableCell } from "./Builders";
+import { INewDataFormProps } from ".";
 
 const { isEnumProperty, isEnumArrayProperty, isInt64Property, isReferenceProperty,
   isUint64Property, isCollectionProperty, isReferenceArrayProperty, isReferenceCollectionTypeid,
@@ -94,19 +99,6 @@ function editReferenceView({ getReferenceValue, onCancel, onSubmit, editReferenc
 
 export const EditReferenceView = withStyles(styles)(editReferenceView);
 
-const getShortId = (parentPath: string, childId: string | undefined = undefined): string => {
-  const sanitizer = [
-    { searchFor: /[.[]/g, replaceWith: idSeparator },
-    { searchFor: /]/g, replaceWith: "" },
-    { searchFor: /\/\/+/g, replaceWith: idSeparator },
-  ];
-  const absolutePath = childId !== undefined ?
-    parentPath + idSeparator + childId :
-    parentPath;
-  const hash = new HashCalculator();
-  hash.pushString(sanitizePath(absolutePath, sanitizer));
-  return hash.getHash();
-};
 /**
  * Checks if a row is expandable.
  * @param data - The data of the current row.
@@ -232,7 +224,7 @@ const createInvalidReference = (parentData: BaseProxifiedProperty, propertyId: s
   props: IToTableRowsProps, options: IPropertyToTableRowOptions,
   pathPrefix: string) => {
   const parentProperty = parentData.getProperty();
-  const newId = getShortId(pathPrefix + parentProperty.getAbsolutePath(), propertyId);
+  const newId = getShortId(pathPrefix + parentProperty.getAbsolutePath(), propertyId, idSeparator);
   const parentIsConstant = !!options.parentIsConstant;
   const newRow: IInspectorRow = {
     children: undefined,
@@ -406,7 +398,7 @@ export const collectionChildTableRow = (collectionPropertyProxy: BaseProxifiedPr
 
   const isPropExpandable = isExpandable(determinedData, currentContext, currentTypeid, dataCreation);
   const children = undefined;
-  const newId = getShortId(pathPrefix + collectionProperty.getAbsolutePath(), propertyId);
+  const newId = getShortId(pathPrefix + collectionProperty.getAbsolutePath(), propertyId, idSeparator);
 
   const propertyIdString = String(propertyId);
 
@@ -459,7 +451,7 @@ export const expandAll = (proxyNode: BaseProxifiedProperty) => {
 
   forEachProperty(root, (property) => {
     if (!isPrimitive(property.getFullTypeid())) {
-      const newId = getShortId(property.getAbsolutePath());
+      const newId = getShortId(property.getAbsolutePath(), undefined, idSeparator);
       expanded[newId] = true;
     }
     return true;
@@ -622,6 +614,56 @@ export const generateForm = (rowData: IInspectorRow, handleCreateData: any) => {
   return true;
 };
 
+const _deletionHandler = (rowData: IInspectorRow) => {
+  const parent = PropertyProxy.proxify(rowData.parent!);
+  if (Array.isArray(parent)) {
+    (rowData!.parent! as ArrayProperty).remove(Number(rowData.name));
+  } else if (parent instanceof Map) {
+    (rowData!.parent! as MapProperty).remove(rowData.name);
+  } else if (parent instanceof Set) {
+    (rowData!.parent! as any).remove(rowData.name); // TODO: Should be SetProperty, once the types package is fixed.
+  } else {
+    (rowData!.parent! as NodeProperty).remove(rowData.name);
+  }
+  return (parent as any).getProperty().getRoot().getWorkspace().commit();
+};
+
+const copyHandler = (rowData: IInspectorRow, ref: React.MutableRefObject<HTMLTextAreaElement>) => {
+  const prop = (rowData.parent! as BaseProperty);
+  let path = prop.getAbsolutePath();
+  if (prop.getContext() === "single") {
+    path += (!prop.isRoot() ? "." : "") + rowData.propertyId;
+  } else {
+    path += `[${rowData.propertyId}]`;
+  }
+
+  const el = ref.current;
+  el.value = path;
+  el.focus();
+  el.select();
+  document.execCommand("copy");
+};
+
+const isStaticProperty = (parent: BaseProperty, rowName: string) => {
+  if (typeof (parent as NodeProperty).getDynamicIds === "function") {
+    const dynamicIds = (parent as NodeProperty).getDynamicIds();
+    if (dynamicIds.includes(rowName)) {
+      return false;
+    }
+  } else if (parent.getContext() !== "single") {
+    return false;
+  }
+  return true;
+};
+
+const deletionHandler = (rowData: IInspectorRow, readOnly: boolean) => {
+  if (!readOnly &&
+    !rowData.parentIsConstant &&
+    !isStaticProperty(rowData.parent as BaseProperty, rowData.propertyId)) {
+    _deletionHandler(rowData);
+  }
+};
+
 // @TODO: Revisit method arguments
 export function nameCellRenderer({ rowData, cellData, columnIndex, tableProps,
   searchResult, renderCreationRow, referenceHandler }: ColumnRendererType) {
@@ -640,7 +682,10 @@ export function nameCellRenderer({ rowData, cellData, columnIndex, tableProps,
           referenceHandler!.initialReferenceEdit(rowData);
         }}
         className={determineCellClassName(rowData, columnIndex, classes, searchResult)}
-        readOnly={!!readOnly} />
+        readOnly={!!readOnly}
+        deleteHandler={deletionHandler}
+        copyHandler={copyHandler}
+      />
     );
     return rowData.context !== undefined ? nameCell : renderCreationRow(rowData);
   }
@@ -657,11 +702,6 @@ export function typeCellRenderer({ rowData, tableProps }: { rowData: IInspectorR
     return (<TypeColumn rowData={rowData} />);
   }
 }
-const renderUneditableCell = (classes, rowData) => (
-  <div className={classes.typeIdRow}>
-    <div className={classes.typeIdRowLeft}>{rowData.value}</div>
-  </div>
-);
 
 const renderTooltipedUneditableCell = (message, classes, rowData) => (
   <Tooltip
@@ -698,6 +738,47 @@ const determineCellClassName = (rowData: IInspectorRow, columnIndex: number,
       classes.match : "");
 };
 
+function onInlineEditEnd(val: string | number | boolean, props: IEditableValueCellProps) {
+  const { rowData } = props;
+  // Convert to number if it is possible and the type is not an integer with 64 bits.
+  if (rowData.typeid !== "Uint64" && rowData.typeid !== "Int64" && rowData.typeid !== "String") {
+    val = !isNaN(+val) ? +val : val;
+  }
+
+  const proxiedParent = PropertyProxy.proxify(rowData.parent!);
+  const parentContext = rowData.parent!.getContext();
+  try {
+    switch (parentContext) {
+      case "single":
+      case "array": {
+        // TODO: Temporary workaround, as enum arrays currently are not considered primitive.
+        if (Utils.isEnumArrayProperty(rowData.parent!)) {
+          (rowData.parent! as any).set(parseInt(rowData.name, 10), val);
+        } else {
+          proxiedParent[rowData.name] = val;
+        }
+        break;
+      }
+      case "map": {
+        // This is safe since we know the input property in PropertyProxy.proxify was of type MapProperty
+        // since the parents context was of type "map"
+        (proxiedParent as unknown as ProxifiedMapProperty).set(rowData.name, val);
+        break;
+      }
+      case "set": {
+        (rowData.parent! as SetProperty).get(rowData.name)!.value = val;
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+    rowData.parent!.getRoot().getWorkspace()!.commit();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 // @TODO: Revisit method arguments
 export function valueCellRenderer(
   { rowData, cellData, columnIndex, tableProps, searchResult,
@@ -715,6 +796,7 @@ export function valueCellRenderer(
         followReferences={followReferences}
         iconRenderer={rowIconRenderer!}
         rowData={rowData}
+        onSubmit={onInlineEditEnd}
         readOnly={!!readOnly} />
     );
   } else {
@@ -724,9 +806,22 @@ export function valueCellRenderer(
   }
 }
 
+export const PropertyNewDataForm: React.FC<Omit<
+  INewDataFormProps, "hasId" | "getParentType" | "getParentContext">> = (props) => {
+    return (<NewDataForm
+      hasId={(rowData, id) => {
+        const siblingIds = rowData.parent ? (rowData.parent as ContainerProperty).getIds() : [];
+        return siblingIds.includes(id);
+      }}
+      getParentType={(rowData) => rowData.parent!.getTypeid()}
+      getParentContext={(rowData) => rowData.parent!.getContext()}
+      {...props}
+    />);
+  };
+
 export const addDataForm = ({ handleCancelCreate, handleCreateData, rowData, options, styleClass }) => (
   <div className={styleClass}>
-    <NewDataForm
+    <PropertyNewDataForm
       onCancelCreate={handleCancelCreate}
       onDataCreate={handleCreateData}
       options={options}
