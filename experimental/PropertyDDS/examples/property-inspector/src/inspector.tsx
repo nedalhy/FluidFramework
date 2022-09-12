@@ -35,10 +35,9 @@ import { PropertyProxy } from "@fluid-experimental/property-proxy";
 import { DataBinder } from "@fluid-experimental/property-binder";
 import AutoSizer from "react-virtualized-auto-sizer";
 
-import { person, buildProxy } from "./personData";
+import { buildProxy } from "./personData";
 
 import { theme } from "./theme";
-import { TypeIdHelper } from "../../../packages/property-properties/node_modules/@fluid-experimental/property-changeset/dist";
 
 const useStyles = makeStyles({
     activeGraph: {
@@ -225,14 +224,19 @@ const MyInspectorTable = (props: any) => {
 
 export const InspectorApp = (inspectorProps: any) => {
     const classes = useStyles();
-    const [json, setJson] = useState(person);
     const [tabIndex, setTabIndex] = useState(0);
+    const [, updateState] = React.useState();
+    const forceUpdate = React.useCallback(() => updateState({}), []);
 
     const { dataBinder, editableTree } = inspectorProps;
 
-    const editableForestProxy = buildProxy(editableTree, json, true);
+    const editableForestProxy = buildProxy(editableTree, true);
 
-
+    useEffect(() => {
+        setInterval(() => {
+            forceUpdate();
+    , 5000);
+    }, []);
     const traverse = (jsonObj, pathPrefix = "", expanded) => {
         expanded[getShortId(pathPrefix)] = true;
         for (const key of Object.keys(jsonObj)) {
@@ -273,13 +277,14 @@ export const InspectorApp = (inspectorProps: any) => {
         columnsRenderers: {
             name: nameCellRenderer,
             value: defaultValueCellRenderer({
-                onSubmit: (_val, props) => {
-                    // const { rowData } = props;
+                onSubmit: (val, props) => {
+                    const { rowData } = props;
                     // @TODO enable this line when EditableTree allow edits
-                    // rowData.parent[rowData.name] = val;
+                    rowData.parent[rowData.name] = val;
+                    forceUpdate();
                     // json[rowData.id] = val;
                     // setJson({ ...json });
-                    console.log(_val, props);
+                    // console.log(_val, props);
                 },
             }),
             type: typeCellRenderer,
