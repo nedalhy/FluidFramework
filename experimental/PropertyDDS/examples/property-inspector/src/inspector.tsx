@@ -7,7 +7,7 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 
 import _ from "lodash";
-import { proxyTargetSymbol, getTypeSymbol, UnwrappedEditableTree, Value, isPrimitive } from "@fluid-internal/tree";
+import { getTypeSymbol, isPrimitive, UnwrappedEditableTree, Value } from "@fluid-internal/tree";
 import {
     IDataCreationOptions,
     IInspectorTableProps,
@@ -35,7 +35,10 @@ import { PropertyProxy } from "@fluid-experimental/property-proxy";
 import { DataBinder } from "@fluid-experimental/property-binder";
 import AutoSizer from "react-virtualized-auto-sizer";
 
+import { person, buildProxy } from "./personData";
+
 import { theme } from "./theme";
+import { TypeIdHelper } from "../../../packages/property-properties/node_modules/@fluid-experimental/property-changeset/dist";
 
 const useStyles = makeStyles({
     activeGraph: {
@@ -73,6 +76,25 @@ const useStyles = makeStyles({
         height: "100%",
         width: "100%",
     },
+    editor: {
+        container: {
+            width: "100%",
+        },
+        body: {
+            width: undefined,
+            display: "flex",
+        },
+        outerBox: {
+            width: "100%",
+        },
+        contentBox: {
+            width: undefined,
+            flex: 1,
+        },
+        warningBox: {
+            width: "100%",
+        },
+    },
 }, { name: "InspectorApp" });
 
 interface PropertyRow<T = UnwrappedEditableTree> extends IRowData<T> {
@@ -102,65 +124,58 @@ const tableProps: Partial<IInspectorTableProps> = {
     height: 600,
 };
 
-const getChildren = (data, pathPrefix?: string): IInspectorRow[] => {
-    const rows: IInspectorRow[] = [];
+const getChildren = (data, pathPrefix: string, addDataRow = true): PropertyRow[] => {
+    const rows: PropertyRow[] = [];
     if (data === undefined) {
         return rows;
     }
+
     for (const key of Object.keys(data)) {
-        const { value, type } = data[key];
-        if (value !== undefined) {
-            const row: IInspectorRow = {
-                id: `${pathPrefix}/${key}`,
+        const schema = data[getTypeSymbol](key);
+        const type = schema.name;
+        let value = data[key];
+        if (isPrimitive(schema) || type === "String") {
+            // Strings are special case, its represented as sequence
+            if (type === "String") {
+                value = value.entries.join("");
+            }
+
+            const row: PropertyRow = {
+                id: getShortId(pathPrefix, key),
                 name: key,
                 context: "single",
-                children: [],
+                children: undefined,
                 isReference: false,
                 value,
                 typeid: type || "",
                 parent: data,
             };
             rows.push(row);
-        } else if (editableTreeProxySymbol in data[key] && Object.keys(data[key]).length) {
-            const row: IInspectorRow = {
-                id: `${pathPrefix}/${key}`,
+        } else {
+            const row: PropertyRow = {
+                id: getShortId(pathPrefix, key),
                 name: key,
                 context: "single",
-                children: getChildren(data[key], `${pathPrefix}/${key}`),
+                children: getChildren(data[key], `${pathPrefix}/${key}`, true),
                 isReference: false,
                 typeid: type || "",
                 parent: data,
+                value: undefined,
             };
             rows.push(row);
         }
     }
+    if (addDataRow) {
+        rows.push({
+            id: `${pathPrefix}/Add`,
+            isNewDataRow: true,
+            parent: data,
+            value: "",
+            typeid: "",
+            name: "",
+        });
+    }
     return rows;
-};
-
-const jsonTableProps: Partial<IInspectorTableProps> = {
-    ...tableProps,
-    toTableRows: (
-        {
-            data, id = "",
-        }: IInspectorRow,
-        props: IToTableRowsProps,
-        options: Partial<IToTableRowsOptions> = {},
-        pathPrefix: string = "",
-    ): IInspectorRow[] => {
-        const rows: IInspectorRow[] = [];
-        if (data === undefined) {
-            return rows;
-        }
-        const root: IInspectorRow = {
-            name: "root",
-            id: "root",
-            context: "single",
-            typeid: data.type || "",
-        };
-        root.children = getChildren(data, root.id);
-        rows.push(root);
-        return rows;
-    },
 };
 
 interface TabPanelProps {
@@ -173,18 +188,42 @@ function TabPanel(props: TabPanelProps) {
     const { children, value, index, ...other } = props;
 
     return (
-      <div
-        role="tabpanel"
-        hidden={value !== index}
-        id={`simple-tabpanel-${index}`}
-        {...other}
-      >
-        {value === index && (children)}
-      </div>
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+            {...other}
+        >
+            {value === index && (children)}
+        </div>
     );
 }
 
-export const InspectorApp = (props: any) => {
+const MyInspectorTable = (props: any) => {
+    const [proxifiedDDS, setProxifiedDDS] = useState<any>(undefined);
+
+    const { dataBinder } = props;
+
+
+    useEffect(() => {
+        // Listening to any change the root path of the PropertyDDS, and rendering the latest state of the
+        // inspector tree-table.
+        dataBinder.registerOnPath("/", ["insert", "remove", "modify"], _.debounce(() => {
+            // Create an ES6 proxy for the DDS, this enables JS object interface for interacting with the DDS.
+            // Note: This is what currently inspector table expect for "data" prop.
+            setProxifiedDDS(PropertyProxy.proxify(dataBinder.getPropertyTree().root));
+        }, 20));
+    }, [dataBinder]);
+
+
+    return (<InspectorTable
+        {...tableProps}
+        {...props}
+        data={proxifiedDDS}
+    />);
+}
+
+export const InspectorApp = (inspectorProps: any) => {
     const classes = useStyles();
     const [json, setJson] = useState(person);
     const [tabIndex, setTabIndex] = useState(0);
@@ -193,9 +232,6 @@ export const InspectorApp = (props: any) => {
 
     const editableForestProxy = buildProxy(editableTree, json, true);
 
-    const onJsonEdit = ({ updated_src }) => {
-        setJson(updated_src);
-    };
 
     const traverse = (jsonObj, pathPrefix = "", expanded) => {
         expanded[getShortId(pathPrefix)] = true;
@@ -203,7 +239,7 @@ export const InspectorApp = (props: any) => {
             const { value } = jsonObj[key];
             if (value !== undefined) {
                 expanded[getShortId(pathPrefix, key)] = true;
-            } else if (editableTreeProxySymbol in jsonObj[key] && Object.keys(jsonObj[key]).length) {
+            } else {
                 traverse(jsonObj[key], `${pathPrefix}/${key}`, expanded);
             }
         }
@@ -260,11 +296,12 @@ export const InspectorApp = (props: any) => {
             if (data === undefined || Object.keys(data).length === 0) {
                 return rows;
             }
+            const type = data[getTypeSymbol](undefined, true);
             const root: PropertyRow = {
                 name: "root",
                 id: getShortId("root"),
                 context: "single",
-                typeid: data[getTypeSymbol]().name || "",
+                typeid: type || "",
                 value: undefined,
             };
             root.children = getChildren(data, "root");
@@ -278,9 +315,6 @@ export const InspectorApp = (props: any) => {
                 <ModalRoot />
                 <div className={classes.root}>
                     <div className={classes.horizontalContainer}>
-                        <div className={classes.editor}>
-                            <ReactJson src={json} onEdit={onJsonEdit} />
-                        </div>
                         <div className={classes.verticalContainer}>
                             <Tabs value={tabIndex} onChange={(event, newTabIndex) => setTabIndex(newTabIndex)}>
                                 <Tab label="Editable Tree" id="tab-json" />

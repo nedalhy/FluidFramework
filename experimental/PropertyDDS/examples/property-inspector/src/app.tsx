@@ -7,13 +7,13 @@ import { PropertyFactory } from "@fluid-experimental/property-properties";
 import { registerSchemas } from "@fluid-experimental/schemas";
 
 import { AzureClient } from "@fluidframework/azure-client";
-import { SharedTree, SharedTreeFactory } from "@fluid-internal/tree";
+import { ISharedTree, SharedTreeFactory } from "@fluid-internal/tree";
 import { InsecureTinyliciousTokenProvider } from "@fluidframework/tinylicious-driver";
 import { SharedPropertyTree } from "@fluid-experimental/property-dds";
 import { IChannelFactory } from "@fluidframework/datastore-definitions";
 import { renderApp } from "./inspector";
 
-class MySharedTree extends SharedTree {
+class MySharedTree {
     public static getFactory(): IChannelFactory {
         return new SharedTreeFactory();
     }

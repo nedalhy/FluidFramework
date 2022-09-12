@@ -11,11 +11,8 @@ import { IChannelServices } from '@fluidframework/datastore-definitions';
 import { IFluidDataStoreRuntime } from '@fluidframework/datastore-definitions';
 import { ISharedObject } from '@fluidframework/shared-object-base';
 import { IsoBuffer } from '@fluidframework/common-utils';
-import { ISummaryTreeWithStats } from '@fluidframework/runtime-definitions';
-import { ITelemetryContext } from '@fluidframework/runtime-definitions';
 import { Jsonable } from '@fluidframework/datastore-definitions';
 import { Serializable } from '@fluidframework/datastore-definitions';
-import { SharedObject } from '@fluidframework/shared-object-base';
 
 // @public
 export type Anchor = Brand<number, "rebaser.Anchor">;
@@ -420,6 +417,9 @@ export interface IForestSubscription extends Dependee {
     readonly schema: StoredSchemaRepository;
     tryMoveCursorTo(destination: Anchor, cursorToMove: ITreeSubscriptionCursor, observer?: ObservingDependent): TreeNavigationResult;
 }
+
+// @public (undocumented)
+export function initializeForest(forest: IEditableForest, content: JsonableTree[]): void;
 
 // @public
 function inputLength(mark: Mark): number;
@@ -930,27 +930,6 @@ export class SharedTreeFactory implements IChannelFactory {
     attributes: IChannelAttributes;
     // (undocumented)
     create(runtime: IFluidDataStoreRuntime, id: string): ISharedTree;
-    // (undocumented)
-    load(runtime: IFluidDataStoreRuntime, id: string, services: IChannelServices, channelAttributes: Readonly<IChannelAttributes>): Promise<IChannel>;
-    // (undocumented)
-    type: string;
-}
-
-// @public
-export class SharedTree extends SharedTreeCore<SequenceChangeset, SequenceChangeFamily> implements ICheckout<SequenceEditBuilder> {
-    constructor(id: string, runtime: IFluidDataStoreRuntime, attributes: IChannelAttributes, telemetryContextPrefix: string);
-    // (undocumented)
-    readonly forest: IForestSubscription;
-    // (undocumented)
-    runTransaction(transaction: (forest: IForestSubscription, editor: SequenceEditBuilder) => TransactionResult): TransactionResult;
-}
-
-// @public
-export class SharedTreeFactory implements IChannelFactory {
-    // (undocumented)
-    attributes: IChannelAttributes;
-    // (undocumented)
-    create(runtime: IFluidDataStoreRuntime, id: string): IChannel;
     // (undocumented)
     load(runtime: IFluidDataStoreRuntime, id: string, services: IChannelServices, channelAttributes: Readonly<IChannelAttributes>): Promise<IChannel>;
     // (undocumented)
