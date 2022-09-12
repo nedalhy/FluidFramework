@@ -43,7 +43,7 @@ export const person: JsonableTree = {
 	},
 };
 
-export function buildProxy(tree: ISharedTree, data: JsonableTree, useSchema?: boolean): EditableTree {
+export function buildProxy(tree: ISharedTree,  useSchema?: boolean): EditableTree {
 	const rootType: TreeSchemaIdentifier = brand("Test:Person-1.0.0");
 	// if (useSchema) {
 	const rootPersonSchema = {
@@ -57,7 +57,7 @@ export function buildProxy(tree: ISharedTree, data: JsonableTree, useSchema?: bo
 
 	// let [context, proxy] = getEditableTree(tree.forest as IEditableForest);
 
-	// // If empty
+	// If empty
 	if (tree.forest.roots.get(tree.forest.rootField).length === 0) {
 	// 	context.free();
 		console.info("Initializing person data.");
@@ -66,12 +66,12 @@ export function buildProxy(tree: ISharedTree, data: JsonableTree, useSchema?: bo
 				parent: undefined,
 				parentField: tree.forest.rootField,
 				parentIndex: 0,
-			}, singleTextCursor(data));
+			}, singleTextCursor(person));
 			return 1;
 		});
 	}
 	// context.free();
-	const [context, proxy] = getEditableTree(tree.forest as IEditableForest);
+	const [context, proxy] = getEditableTree(tree);
 	// const json = { address: { street: "new" }, name: "John" };
 	// const schemaCursor = new SchemaCursor(json, schema, rootType);
 	// const treeData = jsonableTreeFromCursor(schemaCursor);

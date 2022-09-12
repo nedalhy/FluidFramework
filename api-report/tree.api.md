@@ -379,7 +379,10 @@ export interface GenericTreeNode<TChild> extends GenericFieldsNode<TChild>, Node
 }
 
 // @public
-export function getEditableTree(forest: IEditableForest): [EditableTreeContext, UnwrappedEditableField];
+export function getEditableTree(tree: IEditableForest | ISharedTree): [
+EditableTreeContext,
+UnwrappedEditableField
+];
 
 // @public
 export const getTypeSymbol: unique symbol;
@@ -417,9 +420,6 @@ export interface IForestSubscription extends Dependee {
     readonly schema: StoredSchemaRepository;
     tryMoveCursorTo(destination: Anchor, cursorToMove: ITreeSubscriptionCursor, observer?: ObservingDependent): TreeNavigationResult;
 }
-
-// @public (undocumented)
-export function initializeForest(forest: IEditableForest, content: JsonableTree[]): void;
 
 // @public
 function inputLength(mark: Mark): number;

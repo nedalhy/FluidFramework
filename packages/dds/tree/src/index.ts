@@ -22,7 +22,6 @@ export {
 export { ITreeCursor, TreeNavigationResult, IEditableForest,
     IForestSubscription,
     TreeLocation,
-    initializeForest,
     FieldLocation,
     ForestLocation,
     ITreeSubscriptionCursor,
@@ -145,9 +144,7 @@ export {
     NodeCount,
 } from "./feature-libraries";
 
-import { ISharedTree, SharedTreeFactory } from "./shared-tree";
-
 export {
     ISharedTree,
     SharedTreeFactory,
-};
+} from "./shared-tree";
