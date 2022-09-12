@@ -138,9 +138,9 @@ export {
     NodeCount,
 } from "./feature-libraries";
 
-import { SharedTree, SharedTreeFactory } from "./shared-tree";
+import { ISharedTree, SharedTreeFactory } from "./shared-tree";
 
 export {
-    SharedTree,
+    ISharedTree,
     SharedTreeFactory,
 };
