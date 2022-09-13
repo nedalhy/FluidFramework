@@ -242,7 +242,7 @@ export const InspectorApp = (inspectorProps: any) => {
         const forest = (inspectorProps.editableTree as ISharedTree).forest;
         const dependent = new SimpleObservingDependent(() => {
             if (context) {
-                context.free();
+                context.prepareForEdit();
             }
             forest.currentCursors.clear();
         });
