@@ -9,7 +9,7 @@ import ReactDOM from "react-dom";
 import _ from "lodash";
 import {
     getEditableTree, getTypeSymbol, ISharedTree, isPrimitive,
-    ObservingDependent, singleTextCursor, UnwrappedEditableTree, Value
+    SimpleObservingDependent, singleTextCursor, UnwrappedEditableTree, Value
 } from "@fluid-internal/tree";
 import {
     IDataCreationOptions,
@@ -42,8 +42,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { initData, person } from "./personData";
 
 import { theme } from "./theme";
-import { SimpleObservingDependent } from "@fluid-internal/tree/dist/dependency-tracking";
-
+\
 const useStyles = makeStyles({
     activeGraph: {
         "flex-basis": "100%",

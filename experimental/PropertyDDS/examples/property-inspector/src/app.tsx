@@ -7,7 +7,7 @@ import { PropertyFactory } from "@fluid-experimental/property-properties";
 import { registerSchemas } from "@fluid-experimental/schemas";
 
 import { AzureClient } from "@fluidframework/azure-client";
-import { ISharedTree, SharedTreeFactory } from "@fluid-internal/tree";
+import { SharedTreeFactory } from "@fluid-internal/tree";
 import { InsecureTinyliciousTokenProvider } from "@fluidframework/tinylicious-driver";
 import { SharedPropertyTree } from "@fluid-experimental/property-dds";
 import { IChannelFactory } from "@fluidframework/datastore-definitions";

@@ -27,9 +27,9 @@
     "tsc": "tsc"
   },
   "dependencies": {
-    "@fluid-experimental/property-changeset": ">=2.0.0-internal.1.1.0 <2.0.0-internal.2.0.0",
-    "@fluid-experimental/property-properties": ">=2.0.0-internal.1.1.0 <2.0.0-internal.2.0.0",
-    "@fluid-internal/tree": ">=2.0.0-internal.1.1.0 <2.0.0-internal.2.0.0"
+    "@fluid-experimental/property-changeset": ">=2.0.0-internal.1.2.0 <2.0.0-internal.2.0.0",
+    "@fluid-experimental/property-properties": ">=2.0.0-internal.1.2.0 <2.0.0-internal.2.0.0",
+    "@fluid-internal/tree": ">=2.0.0-internal.1.2.0 <2.0.0-internal.2.0.0"
   },
   "devDependencies": {
     "@rushstack/eslint-config": "^2.5.1",
