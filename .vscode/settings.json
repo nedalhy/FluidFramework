@@ -42,6 +42,5 @@
         "unaugmented"
     ],
     "editor.detectIndentation": true,
-    "editor.insertSpaces": false,
-    "debug.internalConsoleOptions": "neverOpen", // Use detectIndentation instead
+    "editor.insertSpaces": false, // Use detectIndentation instead
 }

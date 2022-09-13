@@ -6,9 +6,9 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable max-len */
 import { fail, strict as assert } from "assert";
-import { NamedTreeSchema, StoredSchemaRepository, namedTreeSchema, ValueSchema, fieldSchema, SchemaData, TreeSchemaIdentifier, rootFieldKey } from "../../../schema-stored";
+import { NamedTreeSchema, StoredSchemaRepository, namedTreeSchema, ValueSchema, fieldSchema, SchemaData, TreeSchemaIdentifier } from "../../../schema-stored";
 import { IEditableForest, initializeForest } from "../../../forest";
-import { JsonableTree, EmptyKey, Value, detachedFieldAsKey } from "../../../tree";
+import { JsonableTree, EmptyKey, Value, detachedFieldAsKey, rootFieldKey } from "../../../tree";
 import { brand, Brand, clone } from "../../../util";
 import {
     defaultSchemaPolicy, getEditableTree, EditableTree, buildForest, getTypeSymbol, UnwrappedEditableField,

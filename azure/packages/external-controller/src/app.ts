@@ -130,7 +130,6 @@ async function start(): Promise<void> {
             container,
         );
 
-
         // If the app is in a `createNew` state, and the container is detached, we attach the container.
         // This uploads the container to the service and connects to the collaboration session.
         id = await container.attach();
