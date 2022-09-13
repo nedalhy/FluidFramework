@@ -7,7 +7,10 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 
 import _ from "lodash";
-import { getTypeSymbol, isPrimitive, UnwrappedEditableTree, Value } from "@fluid-internal/tree";
+import {
+    getEditableTree, getTypeSymbol, ISharedTree, isPrimitive,
+    ObservingDependent, singleTextCursor, UnwrappedEditableTree, Value
+} from "@fluid-internal/tree";
 import {
     IDataCreationOptions,
     IInspectorTableProps,
@@ -22,11 +25,12 @@ import {
     typeCellRenderer,
     defaultValueCellRenderer,
     NewDataForm,
+
     getShortId,
     IRowData,
 } from "@fluid-experimental/property-inspector-table";
 
-import { Tabs, Tab } from "@material-ui/core";
+import { Tabs, Tab, Button } from "@material-ui/core";
 import { makeStyles } from "@material-ui/styles";
 import { MuiThemeProvider } from "@material-ui/core/styles";
 
@@ -35,9 +39,10 @@ import { PropertyProxy } from "@fluid-experimental/property-proxy";
 import { DataBinder } from "@fluid-experimental/property-binder";
 import AutoSizer from "react-virtualized-auto-sizer";
 
-import { buildProxy } from "./personData";
+import { initData, person } from "./personData";
 
 import { theme } from "./theme";
+import { SimpleObservingDependent } from "@fluid-internal/tree/dist/dependency-tracking";
 
 const useStyles = makeStyles({
     activeGraph: {
@@ -134,10 +139,10 @@ const getChildren = (data, pathPrefix: string, addDataRow = true): PropertyRow[]
         const type = schema.name;
         let value = data[key];
         if (isPrimitive(schema) || type === "String") {
-            // Strings are special case, its represented as sequence
-            if (type === "String") {
-                value = value.entries.join("");
-            }
+            // // Strings are special case, its represented as sequence
+            // if (type === "String") {
+            //     value = value.entries.join("");
+            // }
 
             const row: PropertyRow = {
                 id: getShortId(pathPrefix, key),
@@ -225,18 +230,33 @@ const MyInspectorTable = (props: any) => {
 export const InspectorApp = (inspectorProps: any) => {
     const classes = useStyles();
     const [tabIndex, setTabIndex] = useState(0);
+    const [proxyData, setProxyData] = useState([]);
     const [, updateState] = React.useState();
     const forceUpdate = React.useCallback(() => updateState({}), []);
 
-    const { dataBinder, editableTree } = inspectorProps;
 
-    const editableForestProxy = buildProxy(editableTree, true);
+
+    const { dataBinder } = inspectorProps;
+    const [context, editableForestProxy] = proxyData;
 
     useEffect(() => {
-        setInterval(() => {
-            forceUpdate();
-    , 5000);
+        const forest = (inspectorProps.editableTree as ISharedTree).forest;
+        const dependent = new SimpleObservingDependent(() => {
+            if (context) {
+                context.free();
+            }
+            forest.currentCursors.clear();
+        });
+
+        if (forest.roots.get(forest.rootField).length !== 0) {
+            const data = getEditableTree(inspectorProps.editableTree);
+            setProxyData(() => data);
+        }
+        forest.registerDependent(dependent);
+
+        return () => forest.removeDependent(dependent);
     }, []);
+
     const traverse = (jsonObj, pathPrefix = "", expanded) => {
         expanded[getShortId(pathPrefix)] = true;
         for (const key of Object.keys(jsonObj)) {
@@ -339,6 +359,16 @@ export const InspectorApp = (inspectorProps: any) => {
                                                     />
                                                 </TabPanel>
                                                 <TabPanel value={tabIndex} index={0}>
+                                                    <Button aria-label="Add Data" onClick={() => {
+                                                        inspectorProps.editableTree.runTransaction((forest, editor) => {
+                                                            editor.insert({
+                                                                parent: undefined,
+                                                                parentField: inspectorProps.editableTree.forest.rootField,
+                                                                parentIndex: 0,
+                                                            }, singleTextCursor(person));
+                                                            return 1;
+                                                        });
+                                                    }} />
                                                     <InspectorTable
                                                         readOnly={false}
                                                         {...jsonTableProps}
@@ -361,6 +391,9 @@ export const InspectorApp = (inspectorProps: any) => {
 
 export function renderApp(container: any, element: HTMLElement) {
     const { propertyTree, editableTree } = container.initialObjects;
+
+    // For testing with initial data;
+    initData(editableTree, true);
 
     const dataBinder = new DataBinder();
 

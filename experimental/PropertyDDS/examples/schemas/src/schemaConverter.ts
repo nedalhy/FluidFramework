@@ -73,29 +73,30 @@ export function convertPSetSchema(typeid: string, repository: StoredSchemaReposi
 
         if (splitTypeId.context === "single") {
             if (TypeIdHelper.isPrimitiveType(splitTypeId.typeid)) {
-                if (splitTypeId.typeid === "String") {
-                    // String is a special case, we actually have to represent it as a sequence
-                    typeSchema = {
-                            name: referencedTypeId,
-                            localFields: new Map<LocalFieldKey, FieldSchema>([
-                                // TODO: What should be the key we use for the entries? Should this be standardized?
-                                ["entries" as LocalFieldKey, {
-                                    kind: FieldKinds.sequence.identifier,
-                                    types: new Set([
-                                        // TODO: Which type do we use for characters?
-                                    ]),
-                                }],
-                            ]),
-                            globalFields: new Set(),
-                            extraLocalFields: emptyField,
-                            extraGlobalFields: false,
-                            value: ValueSchema.Nothing,
-                        };
-                } else {
+                // @TODO for simplicity we convert it to native string
+                // if (splitTypeId.typeid === "String") {
+                //     // String is a special case, we actually have to represent it as a sequence
+                //     typeSchema = {
+                //             name: referencedTypeId,
+                //             localFields: new Map<LocalFieldKey, FieldSchema>([
+                //                 // TODO: What should be the key we use for the entries? Should this be standardized?
+                //                 ["entries" as LocalFieldKey, {
+                //                     kind: FieldKinds.sequence.identifier,
+                //                     types: new Set([
+                //                         // TODO: Which type do we use for characters?
+                //                     ]),
+                //                 }],
+                //             ]),
+                //             globalFields: new Set(),
+                //             extraLocalFields: emptyField,
+                //             extraGlobalFields: false,
+                //             value: ValueSchema.Nothing,
+                //         };
+                // } else {
                     let valueType: ValueSchema;
                     if (splitTypeId.isEnum) {
                         valueType = ValueSchema.Number;
-                    } else if (splitTypeId.typeid.startsWith("Reference<")) {
+                    } else if (splitTypeId.typeid === "String" || splitTypeId.typeid.startsWith("Reference<")) {
                         valueType = ValueSchema.String;
                     } else if (booleanTypes.has(splitTypeId.typeid)) {
                         valueType = ValueSchema.Boolean;
@@ -113,7 +114,7 @@ export function convertPSetSchema(typeid: string, repository: StoredSchemaReposi
                             extraGlobalFields: false,
                             value: valueType,
                         };
-                }
+                // }
             } else {
                 if (splitTypeId.typeid === "NodeProperty") {
                     typeSchema = {
