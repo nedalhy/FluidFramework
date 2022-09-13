@@ -12,9 +12,7 @@ import { convertPSetSchema } from "@fluid-experimental/schemas";
 export const person: JsonableTree = {
 	type: brand("Test:Person-1.0.0"),
 	fields: {
-		// name: [{ fields: {
-		// 	entries: ["A", "d", "a", "m"],
-		// }, type: brand("String") }],
+		name: [{ value: "Adam", type: brand("String") }],
 		age: [{ value: 35, type: brand("Int32") }],
 		salary: [{ value: 10420.2, type: brand("Float32") }],
 		isSingle: [{ value: false, type: brand("Bool") }],
@@ -27,7 +25,7 @@ export const person: JsonableTree = {
 		address: [{
 			fields: {
 				street: [{ value: "treeStreet", type: brand("String") }],
-				zip: [{ type: brand("String") }],
+				zip: [{ type: brand("String"), value: "" }],
 				// coords: [{
 				// 	type: brand("array<Float32>"),
 				// 	fields: {
@@ -43,7 +41,7 @@ export const person: JsonableTree = {
 	},
 };
 
-export function buildProxy(tree: ISharedTree,  useSchema?: boolean): EditableTree {
+export function initData(tree: ISharedTree, useSchema?: boolean): void {
 	const rootType: TreeSchemaIdentifier = brand("Test:Person-1.0.0");
 	// if (useSchema) {
 	const rootPersonSchema = {
@@ -57,29 +55,29 @@ export function buildProxy(tree: ISharedTree,  useSchema?: boolean): EditableTre
 
 	// let [context, proxy] = getEditableTree(tree.forest as IEditableForest);
 
-	// If empty
-	if (tree.forest.roots.get(tree.forest.rootField).length === 0) {
-	// 	context.free();
-		console.info("Initializing person data.");
-		tree.runTransaction((forest, editor) => {
-			editor.insert({
-				parent: undefined,
-				parentField: tree.forest.rootField,
-				parentIndex: 0,
-			}, singleTextCursor(person));
-			return 1;
-		});
-	}
-	// context.free();
-	const [context, proxy] = getEditableTree(tree);
-	// const json = { address: { street: "new" }, name: "John" };
-	// const schemaCursor = new SchemaCursor(json, schema, rootType);
-	// const treeData = jsonableTreeFromCursor(schemaCursor);
-	// initializeForest(forest, [treeData]);
+	// // If empty
+	// if (tree.forest.roots.get(tree.forest.rootField).length === 0) {
+	// // 	context.free();
+	// 	console.info("Initializing person data.");
+	// 	tree.runTransaction((forest, editor) => {
+	// 		editor.insert({
+	// 			parent: undefined,
+	// 			parentField: tree.forest.rootField,
+	// 			parentIndex: 0,
+	// 		}, singleTextCursor(person));
+	// 		return 1;
+	// 	});
+	// }
+	// // context.free();
+	// const [context, proxy] = getEditableTree(tree);
+	// // const json = { address: { street: "new" }, name: "John" };
+	// // const schemaCursor = new SchemaCursor(json, schema, rootType);
+	// // const treeData = jsonableTreeFromCursor(schemaCursor);
+	// // initializeForest(forest, [treeData]);
 
-	// const jsonCursor = new JsonCursor({ address: { street: "new" } });
-	// const _data = jsonableTreeFromCursor(jsonCursor);
-	// initializeForest(forest, [_data]);
-	console.log(proxy);
-	return proxy;
+	// // const jsonCursor = new JsonCursor({ address: { street: "new" } });
+	// // const _data = jsonableTreeFromCursor(jsonCursor);
+	// // initializeForest(forest, [_data]);
+	// console.log(proxy);
+	// return [context, proxy];
 }

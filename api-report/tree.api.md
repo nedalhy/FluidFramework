@@ -944,6 +944,21 @@ export class SimpleDependee implements Dependee {
     removeDependent(dependent: Dependent): void;
 }
 
+// @public
+export class SimpleObservingDependent implements ObservingDependent {
+    constructor(markInvalid: (token?: InvalidationToken) => void, computationName?: string);
+    // (undocumented)
+    readonly computationName: string;
+    dispose(): void;
+    // (undocumented)
+    listDependees(): readonly Dependee[];
+    // (undocumented)
+    readonly markInvalid: (token?: InvalidationToken) => void;
+    // (undocumented)
+    registerDependee(dependee: Dependee): void;
+    unregisterDependees(): void;
+}
+
 // @public (undocumented)
 export function singleTextCursor(root: JsonableTree): TextCursor;
 
