@@ -174,6 +174,8 @@ export interface Dependee extends NamedComputation {
 // @public
 export interface Dependent extends NamedComputation {
     markInvalid(token?: InvalidationToken): void;
+    // (undocumented)
+    markValid(): void;
 }
 
 // @public
@@ -948,11 +950,12 @@ export class SimpleDependee implements Dependee {
     registerDependent(dependent: Dependent): boolean;
     // (undocumented)
     removeDependent(dependent: Dependent): void;
+    validateDependents(): void;
 }
 
 // @public
 export class SimpleObservingDependent implements ObservingDependent {
-    constructor(markInvalid: (token?: InvalidationToken) => void, computationName?: string);
+    constructor(markInvalid: (token?: InvalidationToken) => void, markValid: () => void, computationName?: string);
     // (undocumented)
     readonly computationName: string;
     dispose(): void;
@@ -960,6 +963,8 @@ export class SimpleObservingDependent implements ObservingDependent {
     listDependees(): readonly Dependee[];
     // (undocumented)
     readonly markInvalid: (token?: InvalidationToken) => void;
+    // (undocumented)
+    readonly markValid: () => void;
     // (undocumented)
     registerDependee(dependee: Dependee): void;
     unregisterDependees(): void;

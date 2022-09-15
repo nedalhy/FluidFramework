@@ -42,7 +42,7 @@ export function deepFreeze<T>(object: T): void {
 export class MockDependent extends SimpleObservingDependent {
 	public readonly tokens: (InvalidationToken | undefined)[] = [];
 	public constructor(name: string = "MockDependent") {
-		super((token) => this.tokens.push(token), name);
+		super((token) => this.tokens.push(token), () => {}, name);
 	}
 }
 

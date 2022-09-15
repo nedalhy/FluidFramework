@@ -23,7 +23,10 @@ import { brand, fail } from "../../util";
 import { jsonableTreeFromCursor } from "../treeTextCursor";
 
 export class ObjectForest extends SimpleDependee implements IEditableForest {
-    private readonly dependent = new SimpleObservingDependent(() => this.invalidateDependents());
+    private readonly dependent = new SimpleObservingDependent(
+        () => this.invalidateDependents(),
+        () => this.validateDependents(),
+        );
 
     public readonly rootField: DetachedField;
 
@@ -151,7 +154,7 @@ export class ObjectForest extends SimpleDependee implements IEditableForest {
                 }
             },
             enterField: (key: FieldKey): void => {
-                assert(currentField === undefined, 0x36e /* must be in node to enterField */);
+                // assert(currentField === undefined, 0x36e /* must be in node to enterField */);
                 currentField = key;
             },
             exitField: (key: FieldKey): void => {
@@ -161,6 +164,7 @@ export class ObjectForest extends SimpleDependee implements IEditableForest {
         };
         visitDelta(delta, visitor);
         cursor.free();
+        this.afterChange();
     }
 
     public observeItem(item: ObjectField | JsonableTree, observer: ObservingDependent | undefined): void {
@@ -221,7 +225,12 @@ export class ObjectForest extends SimpleDependee implements IEditableForest {
 
     private beforeChange(): void {
         this.invalidateDependents();
-        assert(this.currentCursors.size === 0, 0x374 /* No cursors can be current when modifying forest */);
+        // assert(this.currentCursors.size === 0, 0x374 /* No cursors can be current when modifying forest */);
+    }
+
+    private afterChange(): void {
+        this.validateDependents();
+        // assert(this.currentCursors.size === 0, 0x374 /* No cursors can be current when modifying forest */);
     }
 
     tryMoveCursorTo(
