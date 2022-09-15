@@ -3,9 +3,7 @@
  * Licensed under the MIT License.
  */
 import {
-    JsonableTree, getEditableTree,
-	brand, TreeSchemaIdentifier, EditableTree, singleTextCursor, IEditableForest, FieldKinds, ISharedTree, rootFieldKey,
-	// JsonCursor, jsonableTreeFromCursor, ITreeCursor, SchemaData,
+	JsonableTree, brand, TreeSchemaIdentifier, FieldKinds, ISharedTree, GlobalFieldKey, FieldSchema,
 } from "@fluid-internal/tree";
 import { convertPSetSchema } from "@fluid-experimental/schemas";
 
@@ -41,43 +39,13 @@ export const person: JsonableTree = {
 	},
 };
 
-export function initData(tree: ISharedTree, useSchema?: boolean): void {
+export function registerSchemas(tree: ISharedTree) {
 	const rootType: TreeSchemaIdentifier = brand("Test:Person-1.0.0");
-	// if (useSchema) {
-	const rootPersonSchema = {
-		kind: FieldKinds.value.identifier,
-		types: new Set(["Test:Person-1.0.0"]),
+	const rootPersonSchema: FieldSchema = {
+		kind: FieldKinds.value.identifier as any,
+		types: new Set([rootType]),
 	};
 
 	convertPSetSchema(rootType, tree.forest.schema);
-	tree.forest.schema.updateFieldSchema(tree.forest.rootField, rootPersonSchema);
-	// }
-
-	// let [context, proxy] = getEditableTree(tree.forest as IEditableForest);
-
-	// // If empty
-	// if (tree.forest.roots.get(tree.forest.rootField).length === 0) {
-	// // 	context.free();
-	// 	console.info("Initializing person data.");
-	// 	tree.runTransaction((forest, editor) => {
-	// 		editor.insert({
-	// 			parent: undefined,
-	// 			parentField: tree.forest.rootField,
-	// 			parentIndex: 0,
-	// 		}, singleTextCursor(person));
-	// 		return 1;
-	// 	});
-	// }
-	// // context.free();
-	// const [context, proxy] = getEditableTree(tree);
-	// // const json = { address: { street: "new" }, name: "John" };
-	// // const schemaCursor = new SchemaCursor(json, schema, rootType);
-	// // const treeData = jsonableTreeFromCursor(schemaCursor);
-	// // initializeForest(forest, [treeData]);
-
-	// // const jsonCursor = new JsonCursor({ address: { street: "new" } });
-	// // const _data = jsonableTreeFromCursor(jsonCursor);
-	// // initializeForest(forest, [_data]);
-	// console.log(proxy);
-	// return [context, proxy];
+	tree.forest.schema.updateFieldSchema(tree.forest.rootField as unknown as GlobalFieldKey, rootPersonSchema);
 }

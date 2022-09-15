@@ -3,13 +3,11 @@
  * Licensed under the MIT License.
  */
 
+import { SharedPropertyTree } from "@fluid-experimental/property-dds";
 import { PropertyFactory } from "@fluid-experimental/property-properties";
 import { registerSchemas } from "@fluid-experimental/schemas";
-
-import { AzureClient } from "@fluidframework/azure-client";
 import { SharedTreeFactory } from "@fluid-internal/tree";
-import { InsecureTinyliciousTokenProvider } from "@fluidframework/tinylicious-driver";
-import { SharedPropertyTree } from "@fluid-experimental/property-dds";
+import { TinyliciousClient } from "@fluidframework/tinylicious-client";
 import { IChannelFactory } from "@fluidframework/datastore-definitions";
 import { renderApp } from "./inspector";
 
@@ -38,12 +36,12 @@ async function start(): Promise<void> {
     const shouldCreateNew = location.hash.length === 0;
     const documentId = !shouldCreateNew ? window.location.hash.substring(1) : "";
 
-    const client = new AzureClient({
-        connection: {
-            type: "local",
-            endpoint: "http://localhost:7070",
-            tokenProvider: new InsecureTinyliciousTokenProvider(),
-        },
+    const client = new TinyliciousClient({
+        // connection: {
+        //     type: "local",
+        //     endpoint: "http://localhost:7070",
+        //     tokenProvider: new InsecureTinyliciousTokenProvider(),
+        // },
     });
 
     let res;

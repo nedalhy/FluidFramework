@@ -13,7 +13,7 @@ import { Dependee, Dependent } from "./dependencies";
 export class SimpleDependee implements Dependee {
 	private readonly dependents = new Set<Dependent>();
 
-	public constructor(public readonly computationName = "SimpleDependee") {}
+	public constructor(public readonly computationName = "SimpleDependee") { }
 
 	public registerDependent(dependent: Dependent): boolean {
 		if (this.dependents.has(dependent)) {
@@ -36,9 +36,18 @@ export class SimpleDependee implements Dependee {
 		}
 	}
 
-    /**
-     * @sealed
-     */
+	/**
+	 * Invalidates the dependents that have are dependent on this data.
+	 */
+	public validateDependents(): void {
+		for (const dependent of this.dependents) {
+			dependent.markValid();
+		}
+	}
+
+	/**
+	 * @sealed
+	 */
 	public listDependents() {
 		return this.dependents;
 	}
