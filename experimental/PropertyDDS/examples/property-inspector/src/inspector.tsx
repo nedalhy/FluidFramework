@@ -225,6 +225,10 @@ const MyInspectorTable = (props: any) => {
     />);
 };
 
+declare global {
+    interface Window { Context: any; Tree: any;}
+}
+
 export const InspectorApp = (inspectorProps: any) => {
     const classes = useStyles();
     const [tabIndex, setTabIndex] = useState(0);
@@ -245,12 +249,15 @@ export const InspectorApp = (inspectorProps: any) => {
             () => {
                 const data = getEditableTree(inspectorProps.editableTree);
                 setProxyData(data);
+                window.Context = data[0];
+                window.Tree = data[1];
             },
         );
         
         const forest = inspectorProps.editableTree.forest;
         forest.registerDependent(dependent);
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return () => forest.removeDependent(dependent);
     }, []);
 
