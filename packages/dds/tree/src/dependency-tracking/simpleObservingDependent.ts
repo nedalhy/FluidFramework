@@ -15,7 +15,6 @@ export class SimpleObservingDependent implements ObservingDependent {
 
     public constructor(
         public readonly markInvalid: (token?: InvalidationToken) => void,
-        public readonly markValid: () => void,
         public readonly computationName = "SimpleObservingDependent",
     ) {}
 

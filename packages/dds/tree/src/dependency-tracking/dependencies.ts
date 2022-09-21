@@ -62,7 +62,6 @@ export interface Dependent extends NamedComputation {
      * there will be a token specific invalidation protocol that must be obeyed.
 	 */
 	markInvalid(token?: InvalidationToken): void;
-	markValid(): void;
 }
 
 /**

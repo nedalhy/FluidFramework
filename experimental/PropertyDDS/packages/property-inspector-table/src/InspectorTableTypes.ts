@@ -55,12 +55,12 @@ export interface IRowData<T = never> {
   /**
    * The raw data to be visualized.
    */
-	data?: T;
-	id: string;
-	children?: IRowData<T>[];
-	// TODO revisit those types which required for propertyDDS
-	isReference?: boolean;
-	context?: string;
+  data?: T;
+  id: string;
+  children?: IRowData<T>[];
+  // TODO revisit those types which required for propertyDDS
+  isReference?: boolean;
+  context?: string;
   isNewDataRow?: boolean;
 }
 
@@ -94,7 +94,7 @@ export interface IColumns {
 /**
  * The interface for an entry of the visualization data array.
  */
-export interface IInspectorRow extends IRowData<BaseProxifiedProperty>{
+export interface IInspectorRow extends IRowData<BaseProxifiedProperty> {
   context: string;
   isConstant: boolean;
   children?: IInspectorRow[];
@@ -131,7 +131,7 @@ export interface IDataCreationOptions {
 
 export type IInspectorColumnsKeys = "name" | "type" | "value";
 
-type BaseTablePropsPartial<T> = Omit<BaseTableProps<T>, "columns"> ;
+type BaseTablePropsPartial<T> = Omit<BaseTableProps<T>, "columns">;
 
 export interface IInspectorTableProps<T extends IRowData<T> = any> extends BaseTablePropsPartial<T> {
   /**
@@ -345,7 +345,7 @@ export interface IEditableValueCellProps extends Omit<React.InputHTMLAttributes<
    */
   readOnly: boolean;
   /**
-   *  A callback called upon submitting the field.
+   * A callback called upon submitting the field.
    */
   onSubmit: (val: string | number | boolean, props: IEditableValueCellProps) => void;
 }

@@ -10,7 +10,7 @@ import _ from "lodash";
 import {
     EditableTreeContext,
     getEditableTree, getTypeSymbol, isPrimitive,
-    SimpleObservingDependent, singleTextCursor, UnwrappedEditableField, UnwrappedEditableTree, Value,
+    singleTextCursor, UnwrappedEditableField, Value,
 } from "@fluid-internal/tree";
 import {
     IDataCreationOptions,
@@ -101,7 +101,7 @@ const useStyles = makeStyles({
     },
 }, { name: "InspectorApp" });
 
-interface PropertyRow<T = UnwrappedEditableTree> extends IRowData<T> {
+interface PropertyRow<T = any> extends IRowData<T> {
     context?: string;
     typeid: string;
     isReference?: boolean;
@@ -225,10 +225,6 @@ const MyInspectorTable = (props: any) => {
     />);
 };
 
-declare global {
-    interface Window { Context: any; Tree: any;}
-}
-
 export const InspectorApp = (inspectorProps: any) => {
     const classes = useStyles();
     const [tabIndex, setTabIndex] = useState(0);
@@ -237,28 +233,15 @@ export const InspectorApp = (inspectorProps: any) => {
     const forceUpdate = React.useCallback(() => updateState({} as any), []);
 
     const { dataBinder } = inspectorProps;
-    const [context, editableForestProxy] = proxyData;
+    const [_proxyContext, editableForestProxy] = proxyData;
 
     useEffect(() => {
-        const dependent = new SimpleObservingDependent(
-            () => {
-                if (context) {
-                    context.prepareForEdit();
-                }
-            },
-            () => {
-                const data = getEditableTree(inspectorProps.editableTree);
-                setProxyData(data);
-                window.Context = data[0];
-                window.Tree = data[1];
-            },
-        );
-        
-        const forest = inspectorProps.editableTree.forest;
-        forest.registerDependent(dependent);
+        const data = getEditableTree(inspectorProps.editableTree);
+        setProxyData(data);
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return () => forest.removeDependent(dependent);
+        data[0]!.registerAfterHandler(() => {
+            forceUpdate();
+        });
     }, []);
 
     // useEffect(() => {
@@ -304,7 +287,7 @@ export const InspectorApp = (inspectorProps: any) => {
                     onDataCreate={handleCreateData}
                     options={options}
                     rowData={rowData}
-                    hasId={(_rowData, id) => Object.keys(rowData.parent).indexOf(id) !== -1}
+                    hasId={(_rowData, id) => Object.keys(rowData.parent).includes(id)}
                     getParentType={() => rowData.parent.type as string}
                     getParentContext={() => "single"} // @TODO
                 />

@@ -50,47 +50,9 @@ export interface ICellProps extends React.HTMLAttributes<HTMLDivElement> {
 export interface INameCellProps {
   editReferenceHandler: any;
   readOnly: boolean;
+  copyHandler?: ICopyOptions["handler"];
+  deleteHandler?: IDeleteOptions["handler"];
 }
-
-const deletionHandler = (rowData: IInspectorRow) => {
-  const parent = PropertyProxy.proxify(rowData.parent!);
-  if (Array.isArray(parent)) {
-    (rowData!.parent! as ArrayProperty).remove(Number(rowData.name));
-  } else if (parent instanceof Map) {
-    (rowData!.parent! as MapProperty).remove(rowData.name);
-  } else if (parent instanceof Set) {
-    (rowData!.parent! as any).remove(rowData.name); // TODO: Should be SetProperty, once the types package is fixed.
-  } else {
-    (rowData!.parent! as NodeProperty).remove(rowData.name);
-  }
-  return (parent as any).getProperty().getRoot().getWorkspace().commit();
-};
-
-const copyHandler = (rowData: IInspectorRow, ref: React.MutableRefObject<HTMLTextAreaElement>) => {
-  const prop = (rowData.parent! as BaseProperty);
-  let path = prop.getAbsolutePath();
-  path += prop.getContext() === "single"
-    ? (!prop.isRoot() ? "." : "") + rowData.propertyId
-    : `[${ rowData.propertyId }]`;
-
-  const el = ref.current;
-  el.value = path;
-  el.focus();
-  el.select();
-  document.execCommand("copy");
-};
-
-const isStaticProperty = (parent: BaseProperty, rowName: string) => {
-  if (typeof (parent as NodeProperty).getDynamicIds === "function") {
-    const dynamicIds = (parent as NodeProperty).getDynamicIds();
-    if (dynamicIds.includes(rowName)) {
-      return false;
-    }
-  } else if (parent.getContext() !== "single") {
-    return false;
-  }
-  return true;
-};
 
 // Class names that are relevant to fake a hover style on the table row.
 const BaseTableRowClass = "BaseTable__row";

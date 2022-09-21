@@ -2,26 +2,21 @@
 * Copyright (c) Microsoft Corporation and contributors. All rights reserved.
 * Licensed under the MIT License.
 */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-/* eslint-disable max-len */
 import { fail, strict as assert } from "assert";
-import { NamedTreeSchema, StoredSchemaRepository, namedTreeSchema, ValueSchema, fieldSchema, SchemaData, TreeSchemaIdentifier } from "../../../schema-stored";
-import { IEditableForest, initializeForest } from "../../../forest";
-import { JsonableTree, EmptyKey, Value, detachedFieldAsKey, rootFieldKey } from "../../../tree";
-import { brand, Brand, clone } from "../../../util";
 import {
-    defaultSchemaPolicy, getEditableTree, EditableTree, buildForest, getTypeSymbol, UnwrappedEditableField,
-    proxyTargetSymbol, emptyField, FieldKinds, valueSymbol, EditableTreeOrPrimitive, singleTextCursor,
-    isPrimitiveValue, isPrimitive, Multiplicity, UnwrappedEditableTree, EditableTreeContext, ForestIndex,
+    NamedTreeSchema, namedTreeSchema, ValueSchema, fieldSchema, SchemaData, TreeSchemaIdentifier,
+} from "../../../schema-stored";
+import { JsonableTree, EmptyKey, detachedFieldAsKey, rootFieldKey } from "../../../tree";
+import { brand, Brand } from "../../../util";
+import {
+    getEditableTree, EditableTree, getTypeSymbol, UnwrappedEditableField,
+    emptyField, FieldKinds, singleTextCursor,
+    EditableTreeContext,
 } from "../../../feature-libraries";
 
 import { ITestTreeProvider, TestTreeProvider } from "../../utils";
 import { ISharedTree } from "../../../shared-tree";
 import { TransactionResult } from "../../../checkout";
-
-// eslint-disable-next-line import/no-internal-modules
-import { getFieldKind, getFieldSchema, getPrimaryField } from "../../../feature-libraries/editable-tree/utilities";
 
 // TODO: Use typed schema (ex: typedTreeSchema), here, and derive the types below from them programmatically.
 
@@ -99,7 +94,17 @@ const optionalChildSchema = namedTreeSchema({
 
 const emptyNode: JsonableTree = { type: optionalChildSchema.name };
 
-const schemaTypes: Set<NamedTreeSchema> = new Set([optionalChildSchema, stringSchema, float32Schema, int32Schema, complexPhoneSchema, phonesSchema, addressSchema, mapStringSchema, personSchema]);
+const schemaTypes: Set<NamedTreeSchema> = new Set([
+    optionalChildSchema,
+    stringSchema,
+    float32Schema,
+    int32Schema,
+    complexPhoneSchema,
+    phonesSchema,
+    addressSchema,
+    mapStringSchema,
+    personSchema,
+]);
 
 const schemaMap: Map<TreeSchemaIdentifier, NamedTreeSchema> = new Map();
 for (const named of schemaTypes) {
@@ -170,16 +175,17 @@ const personData: JsonableTree = {
 
 let _provider: ITestTreeProvider;
 
-const registerSchemas = (tree: ISharedTree, schema: SchemaData) => {
-    assert(tree.isAttached());
-    const forest = tree.forest;
-    forest.schema.updateFieldSchema(rootFieldKey, schema.globalFieldSchema.get(rootFieldKey) ?? fail("oops"));
-    for (const [key, value] of schema.treeSchema) {
-        forest.schema.updateTreeSchema(key, value);
+async function setupForest(schema: SchemaData, data: JsonableTree): Promise<readonly ISharedTree[]> {
+    const provider = await TestTreeProvider.create(3);
+    _provider = provider;
+    for (const tree of provider.trees) {
+        assert(tree.isAttached());
+        const forest = tree.forest;
+        forest.schema.updateFieldSchema(rootFieldKey, schema.globalFieldSchema.get(rootFieldKey) ?? fail("oops"));
+        for (const [key, value] of schema.treeSchema) {
+            forest.schema.updateTreeSchema(key, value);
+        }
     }
-};
-
-const insertPerson = (provider: ITestTreeProvider, data: JsonableTree) => {
     provider.trees[0].runTransaction((forest, editor) => {
         const writeCursor = singleTextCursor(data);
         editor.insert({
@@ -190,19 +196,8 @@ const insertPerson = (provider: ITestTreeProvider, data: JsonableTree) => {
 
         return TransactionResult.Apply;
     });
-};
-
-async function setupForest(schema: SchemaData, data?: JsonableTree, treeNum = 3): Promise<readonly ISharedTree[]> {
-    const provider = await TestTreeProvider.create(treeNum);
-    _provider = provider;
-    for (const tree of provider.trees) {
-      registerSchemas(tree, schema);
-    }
-    if (data) {
-        insertPerson(provider, data);
-    }
     await provider.ensureSynchronized();
-    return provider.trees;
+    return provider.trees.slice(1);
 }
 
 async function buildTestProxy(data: JsonableTree): Promise<[EditableTreeContext, UnwrappedEditableField]> {
@@ -235,44 +230,6 @@ describe.only("editing with editable-tree", () => {
         context2.prepareForEdit();
         await _provider.ensureSynchronized();
         assert.deepEqual(person1, person2);
-        context.free();
-    });
-
-    it("update property and reload", async () => {
-        const provider = await TestTreeProvider.create(2);
-        const trees = provider.trees;
-        for (const tree of trees) {
-          registerSchemas(tree, fullSchemaData);
-        }
-
-        await provider.ensureSynchronized();
-
-        // Insert data to the first data
-        insertPerson(provider, personData);
-        const [context, person] = getEditableTree(trees[0]);
-        const person1 = person as PersonType;
-
-        await provider.ensureSynchronized();
-
-        const [context2, person20] = getEditableTree(trees[1]);
-        const person2 = person20 as PersonType;
-
-        // Update
-        person1.address.street = "bla";
-
-        await provider.enableManualSummarization();
-        await provider.ensureSynchronized();
-
-        person2.age = 12 as any;
-
-        await provider.ensureSynchronized();
-
-        const newTree = await provider.createTree();
-        registerSchemas(newTree, fullSchemaData);
-
-        const [newContext, newPerson] = getEditableTree(newTree);
-
-        assert.deepEqual(person1, newPerson);
         context.free();
     });
 

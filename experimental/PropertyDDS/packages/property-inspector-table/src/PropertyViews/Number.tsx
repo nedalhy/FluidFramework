@@ -3,11 +3,9 @@
  * Licensed under the MIT License.
  */
 
-import { ContainerProperty } from "@fluid-experimental/property-properties";
 import TextField, { TextFieldProps } from "@material-ui/core/TextField";
 import * as React from "react";
 import { IEditableValueCellProps, IInspectorRow } from "../InspectorTableTypes";
-import { getPropertyValue } from "../propertyInspectorUtils";
 
 type NumberProps = (IEditableValueCellProps & {
   onSubmit: (val: number, props: IEditableValueCellProps) => void;

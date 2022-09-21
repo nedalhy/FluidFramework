@@ -5,7 +5,7 @@
 
 export {
     Dependee, Dependent, NamedComputation, ObservingDependent, InvalidationToken, recordDependency,
-    SimpleDependee, SimpleObservingDependent,
+    SimpleDependee,
 } from "./dependency-tracking";
 
 export {
@@ -112,8 +112,10 @@ export {
     isNeverField,
     FullSchemaPolicy,
     UnwrappedEditableField,
+    UnwrappedEditableFieldSequence,
+    FieldlessEditableTree,
     EditableTreeContext,
-    UnwrappedEditableTree,
+    EditableTreeContextHandler,
     EditableTreeOrPrimitive,
     EditableTree,
     getEditableTree,

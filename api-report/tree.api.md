@@ -174,8 +174,6 @@ export interface Dependee extends NamedComputation {
 // @public
 export interface Dependent extends NamedComputation {
     markInvalid(token?: InvalidationToken): void;
-    // (undocumented)
-    markValid(): void;
 }
 
 // @public
@@ -183,18 +181,21 @@ export interface DetachedField extends Opaque<Brand<string, "tree.DetachedField"
 }
 
 // @public
-export interface EditableTree {
-    readonly [getTypeSymbol]: (key?: string, nameOnly?: boolean) => TreeSchema | TreeSchemaIdentifier | undefined;
-    readonly [proxyTargetSymbol]: object;
-    readonly [valueSymbol]: Value;
+export interface EditableTree extends FieldlessEditableTree {
     readonly [key: string]: UnwrappedEditableField;
 }
 
 // @public
 export interface EditableTreeContext {
     free(): void;
+    // (undocumented)
+    getGlobalFieldSchema(key: GlobalFieldKey): FieldSchema | undefined;
     prepareForEdit(): void;
+    registerAfterHandler(afterHandler: EditableTreeContextHandler): void;
 }
+
+// @public (undocumented)
+export type EditableTreeContextHandler = (this: EditableTreeContext) => void;
 
 // @public
 export type EditableTreeOrPrimitive = EditableTree | PrimitiveValue;
@@ -320,6 +321,16 @@ export { FieldKinds }
 const fieldKinds: ReadonlyMap<FieldKindIdentifier, FieldKind>;
 
 // @public
+export interface FieldlessEditableTree {
+    readonly [getTypeSymbol]: (key?: string, nameOnly?: boolean) => TreeSchema | TreeSchemaIdentifier | undefined;
+    // (undocumented)
+    get [nodeSymbol](): UnwrappedEditableField;
+    set [nodeSymbol](value: UnwrappedEditableField);
+    readonly [proxyTargetSymbol]: object;
+    readonly [valueSymbol]: Value;
+}
+
+// @public
 export interface FieldLocation {
     // (undocumented)
     readonly key: FieldKey;
@@ -381,7 +392,7 @@ export interface GenericTreeNode<TChild> extends GenericFieldsNode<TChild>, Node
 }
 
 // @public
-export function getEditableTree(tree: IEditableForest | ISharedTree): [
+export function getEditableTree(from: ISharedTree | IEditableForest): [
 EditableTreeContext,
 UnwrappedEditableField
 ];
@@ -950,24 +961,6 @@ export class SimpleDependee implements Dependee {
     registerDependent(dependent: Dependent): boolean;
     // (undocumented)
     removeDependent(dependent: Dependent): void;
-    validateDependents(): void;
-}
-
-// @public
-export class SimpleObservingDependent implements ObservingDependent {
-    constructor(markInvalid: (token?: InvalidationToken) => void, markValid: () => void, computationName?: string);
-    // (undocumented)
-    readonly computationName: string;
-    dispose(): void;
-    // (undocumented)
-    listDependees(): readonly Dependee[];
-    // (undocumented)
-    readonly markInvalid: (token?: InvalidationToken) => void;
-    // (undocumented)
-    readonly markValid: () => void;
-    // (undocumented)
-    registerDependee(dependee: Dependee): void;
-    unregisterDependees(): void;
 }
 
 // @public (undocumented)
@@ -1339,10 +1332,10 @@ class UnitEncoder extends ChangeEncoder<0> {
 }
 
 // @public
-export type UnwrappedEditableField = UnwrappedEditableTree | undefined | readonly UnwrappedEditableTree[];
+export type UnwrappedEditableField = EditableTreeOrPrimitive | undefined | UnwrappedEditableFieldSequence;
 
-// @public
-export type UnwrappedEditableTree = EditableTreeOrPrimitive | readonly UnwrappedEditableTree[];
+// @public (undocumented)
+export type UnwrappedEditableFieldSequence = FieldlessEditableTree & UnwrappedEditableField[];
 
 // @public
 export interface UpPath {
